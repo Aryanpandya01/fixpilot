@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FixPilot Pitch Deck</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    .slide-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; }
+    .slide { display: none; max-width: 1000px; width: 100%; background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 48px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); animation: fadeIn 0.3s ease; }
+    .slide.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .slide-num { font-size: 14px; text-transform: uppercase; color: #38bdf8; font-weight: 700; letter-spacing: 2px; margin-bottom: 8px; }
+    h1 { font-size: 40px; font-weight: 800; color: #ffffff; margin-bottom: 24px; line-height: 1.2; }
+    h2 { font-size: 24px; color: #94a3b8; font-weight: 600; margin-bottom: 24px; }
+    p, li { font-size: 20px; line-height: 1.6; color: #cbd5e1; }
+    ul { list-style: none; margin-top: 16px; }
+    li { margin-bottom: 14px; display: flex; align-items: flex-start; gap: 12px; }
+    li::before { content: "▸"; color: #38bdf8; font-weight: bold; }
+    .highlight { color: #38bdf8; font-weight: 700; }
+    .tag { display: inline-block; background: #2563eb; color: #fff; padding: 4px 12px; border-radius: 999px; font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+    .controls { display: flex; justify-content: space-between; align-items: center; padding: 16px 40px; background: #0b1120; border-top: 1px solid #1e293b; font-size: 14px; color: #64748b; }
+    .btn { background: #2563eb; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .btn:hover { background: #1d4ed8; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 17px; }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #334155; }
+    th { color: #38bdf8; }
+  </style>
+</head>
+<body>
+
+  <div class="slide-container">
+
+    <!-- Slide 1 -->
+    <div class="slide active">
+      <div class="slide-num">Slide 1 / 10 • Problem</div>
+      <div class="tag">The Bottleneck</div>
+      <h1>Desktop Software Support Is Broken & Expensive</h1>
+      <ul>
+        <li>Software vendors answer the <strong>same 10 navigation questions</strong> all day over AnyDesk.</li>
+        <li>Customers wait <strong>30–45 minutes</strong> for a human support agent just to click 3 buttons.</li>
+        <li>High operational costs: ₹30,000–50,000/month per support executive.</li>
+        <li>Result: frustrated shopkeepers with stalled store checkouts.</li>
+      </ul>
+    </div>
+
+    <!-- Slide 2 -->
+    <div class="slide">
+      <div class="slide-num">Slide 2 / 10 • Solution</div>
+      <div class="tag">FixPilot</div>
+      <h1>AnyDesk, But AI Fixes It Instead of a Human</h1>
+      <ul>
+        <li><strong>Mode 1 (Personal Help):</strong> Free Windows 11 help for everyday PC users (WiFi, Bluetooth, Dark Mode).</li>
+        <li><strong>Mode 2 (Business Support):</strong> Instant 6-digit session code connecting vendor software to AI Computer Use.</li>
+        <li>Works directly on <strong>native Windows desktop software</strong> with zero code changes for vendors.</li>
+      </ul>
+    </div>
+
+    <!-- Slide 3 -->
+    <div class="slide">
+      <div class="slide-num">Slide 3 / 10 • Workflow</div>
+      <div class="tag">How It Works</div>
+      <h1>3-Step Autonomous Resolution</h1>
+      <ul>
+        <li><strong>1. Code Generation:</strong> Support desk enters customer problem → generates unique 6-digit code.</li>
+        <li><strong>2. Customer Consent:</strong> Customer enters code in FixPilot app → clicks <em>Accept</em>.</li>
+        <li><strong>3. Autonomous Action:</strong> Gemini Computer Use sees the screen, follows vendor knowledge base, fixes the problem live, and reports back.</li>
+      </ul>
+    </div>
+
+    <!-- Slide 4 -->
+    <div class="slide">
+      <div class="slide-num">Slide 4 / 10 • Live Demo</div>
+      <div class="tag">Stage Demo</div>
+      <h1>Live Demonstration</h1>
+      <p style="margin-bottom: 20px; color: #94a3b8;">Switching live between Support Desk (Laptop B) & Customer PC (Laptop A):</p>
+      <ul>
+        <li>Target SaaS: <span class="highlight">BilliGo (https://billigo.projectw.in/)</span></li>
+        <li>Query: <span class="highlight">"Configure custom private domain email (Hostinger SMTP for aryan@projectw.in) and send a test mail"</span></li>
+        <li>Watch the AI autonomously navigate Settings → Email (SMTP), configure server credentials, verify connection, and send test mail to <code>aryanpandya0505@gmail.com</code>.</li>
+        <li>Safety in action: STOP kill switch and escalation rules for subscription renewal alerts.</li>
+      </ul>
+    </div>
+
+    <!-- Slide 5 -->
+    <div class="slide">
+      <div class="slide-num">Slide 5 / 10 • Tech Stack</div>
+      <div class="tag">Architecture</div>
+      <h1>Google Gemini Computer Use Stack</h1>
+      <ul>
+        <li><strong>Multimodal Computer Use:</strong> Google GenAI Interactions API with normalized (0-999) desktop spatial grounding.</li>
+        <li><strong>Gemini 3.8 Flash:</strong> Sub-second action latency for fast, accurate mouse & keyboard control.</li>
+        <li><strong>Gemini 4 Argon Fallback:</strong> Automatic retry on complex multi-window states.</li>
+        <li><strong>Knowledge Base RAG:</strong> Exact domain grounding via structured vendor documentation.</li>
+      </ul>
+    </div>
+
+    <!-- Slide 6 -->
+    <div class="slide">
+      <div class="slide-num">Slide 6 / 10 • Safety</div>
+      <div class="tag">Trust & Safety</div>
+      <h1>Safety & Guardrails by Design</h1>
+      <ul>
+        <li><strong>Explicit Consent:</strong> Ephemeral 6-digit session codes with mandatory Accept dialog.</li>
+        <li><strong>3 Operational Modes:</strong> Guide Mode (visual arrows only), Assist Mode (step-by-step confirmation), Auto Mode.</li>
+        <li><strong>Global Kill Switch:</strong> Ctrl+Shift+X immediately ceases all automation.</li>
+        <li><strong>Hard Boundaries:</strong> Never touches passwords, admin UAC popups, financial payments, or data deletion.</li>
+      </ul>
+    </div>
+
+    <!-- Slide 7 -->
+    <div class="slide">
+      <div class="slide-num">Slide 7 / 10 • Business Model</div>
+      <div class="tag">Monetization</div>
+      <h1>SaaS Business Model</h1>
+      <ul>
+        <li><strong>B2C:</strong> 100% Free for individuals needing everyday Windows help.</li>
+        <li><strong>B2B Starter (Vendors):</strong> ₹4,999 / month (includes 300 automated fixes).</li>
+        <li><strong>B2B Pro (Vendors):</strong> ₹14,999 / month (includes 1,500 automated fixes).</li>
+        <li><strong>Overages:</strong> ₹15 per fix (90% cheaper than human support cost of ₹150+).</li>
+      </ul>
+    </div>
+
+    <!-- Slide 8 -->
+    <div class="slide">
+      <div class="slide-num">Slide 8 / 10 • Competition</div>
+      <div class="tag">Competitive Advantage</div>
+      <h1>Why FixPilot Wins</h1>
+      <table>
+        <thead>
+          <tr><th>Feature</th><th>AnyDesk</th><th>Chatbots</th><th>FixPilot</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Works on Windows Desktop Software</td><td>✅</td><td>❌</td><td><strong>✅ YES</strong></td></tr>
+          <tr><td>Requires Zero Coding / Setup</td><td>✅</td><td>✅</td><td><strong>✅ Instant</strong></td></tr>
+          <tr><td>Fully Autonomous Action</td><td>❌ Human</td><td>❌ Text only</td><td><strong>✅ AI Action</strong></td></tr>
+          <tr><td>Hinglish & Regional Support</td><td>❌</td><td>Partial</td><td><strong>✅ Native</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Slide 9 -->
+    <div class="slide">
+      <div class="slide-num">Slide 9 / 10 • Traction</div>
+      <div class="tag">Validation</div>
+      <h1>Live Pilot Partner: BilliGo</h1>
+      <ul>
+        <li>Active SaaS Partnership: <strong>BilliGo</strong> (Cloud ERP & GST Billing by Aryan Pandya / Shiv Enterprise, Bhavnagar).</li>
+        <li>High-impact problem solved: Private domain SMTP email setup (Hostinger/Google Workspace) takes 45 minutes on AnyDesk — FixPilot executes it in under 50 seconds.</li>
+        <li>Founder verified: <em>"Private email setup and GST filing navigation consume 70% of our daily AnyDesk calls."</em></li>
+        <li>Immediate deployment pipeline across retail merchants across Gujarat & Maharashtra.</li>
+      </ul>
+    </div>
+
+    <!-- Slide 10 -->
+    <div class="slide">
+      <div class="slide-num">Slide 10 / 10 • Team & Vision</div>
+      <div class="tag">Roadmap</div>
+      <h1>The Vision: Autonomous Desktop Co-Pilot</h1>
+      <ul>
+        <li><strong>Q1 2027:</strong> Production launch with billing software pilots; Hindi & Gujarati voice support.</li>
+        <li><strong>Q2 2027:</strong> Self-learning engine: AI observes human support once and compiles knowledge base automatically.</li>
+        <li><strong>FixPilot:</strong> Making AnyDesk obsolete for routine software operations.</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="controls">
+    <button class="btn" onclick="prevSlide()">◀ Previous</button>
+    <span id="slideIndicator">Use ← / → keys or buttons to navigate</span>
+    <button class="btn" onclick="nextSlide()">Next ▶</button>
+  </div>
+
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll(".slide");
+
+    function showSlide(index) {
+      slides.forEach((s, i) => s.classList.toggle("active", i === index));
+      currentSlide = index;
+    }
+
+    function nextSlide() {
+      if (currentSlide < slides.length - 1) showSlide(currentSlide + 1);
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) showSlide(currentSlide - 1);
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " ") nextSlide();
+      if (e.key === "ArrowLeft") prevSlide();
+    });
+  </script>
+</body>
+</html>

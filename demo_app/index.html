@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BilliGo Cloud ERP & Billing</title>
+  <style>
+    :root {
+      --bg-page: #f8fafc;
+      --bg-sidebar: #ffffff;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary-green: #065f46;
+      --primary-green-hover: #047857;
+      --active-bg: #f1f5f9;
+      --badge-warn-bg: #fef3c7;
+      --badge-warn-text: #92400e;
+      --badge-success-bg: #dcfce7;
+      --badge-success-text: #166534;
+      --banner-bg: #fffbeb;
+      --banner-border: #fef3c7;
+      --banner-text: #92400e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg-page); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; font-size: 14px; }
+
+    /* Top Subscription Banner */
+    .top-banner {
+      background: var(--banner-bg);
+      border-bottom: 1px solid var(--banner-border);
+      color: var(--banner-text);
+      padding: 8px 16px;
+      font-size: 13px;
+      text-align: left;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .top-banner a { color: var(--primary-green); font-weight: 600; text-decoration: none; }
+    .top-banner a:hover { text-decoration: underline; }
+
+    /* Layout */
+    .app-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Left Primary Sidebar */
+    .primary-sidebar {
+      width: 240px;
+      background: #ffffff;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      justify-content: space-between;
+    }
+
+    .org-switcher {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+    }
+    .org-avatar {
+      width: 36px;
+      height: 36px;
+      background: #065f46;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 16px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .org-details { flex: 1; }
+    .org-name { font-weight: 700; font-size: 14px; color: #0f172a; }
+    .org-sub { font-size: 12px; color: #64748b; }
+
+    .search-box {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .search-input-wrap {
+      display: flex;
+      align-items: center;
+      background: #f1f5f9;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 6px 10px;
+      gap: 6px;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .search-shortcut {
+      margin-left: auto;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 1px 4px;
+      font-size: 11px;
+      font-family: monospace;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 6px;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+    }
+    .nav-item:hover {
+      background: #f8fafc;
+      color: #0f172a;
+    }
+    .nav-item.active {
+      background: #f1f5f9;
+      color: #065f46;
+      font-weight: 600;
+    }
+    .nav-item .icon { font-size: 16px; width: 18px; text-align: center; }
+
+    .sidebar-user {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      background: #e2e8f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      color: #334155;
+    }
+    .user-info { flex: 1; }
+    .user-name { font-weight: 600; font-size: 13px; color: #0f172a; }
+    .user-role { font-size: 11px; color: #64748b; }
+    .bell-icon { position: relative; cursor: pointer; font-size: 18px; color: #64748b; }
+    .bell-badge {
+      position: absolute;
+      top: -4px;
+      right: -6px;
+      background: #dc2626;
+      color: #ffffff;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 0 4px;
+    }
+
+    /* Secondary Submenu (Settings Sidebar) */
+    .settings-subnav {
+      width: 220px;
+      background: #ffffff;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      padding: 20px 16px;
+      overflow-y: auto;
+    }
+    .settings-heading {
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 20px;
+    }
+    .subnav-category {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
+      margin: 14px 0 6px 4px;
+    }
+    .subnav-item {
+      padding: 7px 10px;
+      border-radius: 6px;
+      color: #334155;
+      font-size: 13px;
+      cursor: pointer;
+      margin-bottom: 2px;
+      transition: all 0.15s ease;
+    }
+    .subnav-item:hover {
+      background: #f8fafc;
+      color: #0f172a;
+    }
+    .subnav-item.active {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 36px;
+      background: #f8fafc;
+    }
+
+    .breadcrumb {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+    .content-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+    .content-subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 20px;
+      max-width: 800px;
+      line-height: 1.5;
+    }
+
+    /* Status Alert Banner */
+    .status-alert {
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .status-alert.warning {
+      background: var(--badge-warn-bg);
+      border: 1px solid #fde68a;
+      color: var(--badge-warn-text);
+    }
+    .status-alert.success {
+      background: var(--badge-success-bg);
+      border: 1px solid #bbf7d0;
+      color: var(--badge-success-text);
+    }
+    .status-alert.danger {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+    .status-alert-title { font-weight: 700; margin-bottom: 2px; }
+
+    /* Cards */
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .card-heading {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+    .card-sub {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 16px;
+    }
+
+    /* Provider Pills */
+    .provider-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .provider-btn {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #0f172a;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .provider-btn:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+    .provider-btn.selected {
+      border: 2px solid #065f46;
+      background: #f0fdf4;
+      color: #065f46;
+      font-weight: 600;
+    }
+
+    /* Form Fields */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 18px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+    .form-group.full { grid-column: span 2; }
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+    }
+    .field-hint {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    input[type="text"], input[type="password"], input[type="number"] {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #0f172a;
+      outline: none;
+      transition: border-color 0.15s ease;
+      background: #ffffff;
+    }
+    input:focus {
+      border-color: #065f46;
+      box-shadow: 0 0 0 2px rgba(6, 95, 70, 0.15);
+    }
+
+    .password-wrap {
+      position: relative;
+    }
+    .btn-show-pass {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #065f46;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Encryption Segmented Toggle */
+    .segmented-control {
+      display: flex;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 3px;
+    }
+    .segmented-btn {
+      flex: 1;
+      padding: 8px 12px;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+    .segmented-btn.active {
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* Action Buttons */
+    .action-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .btn-test {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+    .btn-test:hover { background: #f8fafc; border-color: #94a3b8; }
+
+    .btn-save {
+      background: #065f46;
+      border: none;
+      color: #ffffff;
+      padding: 10px 22px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    .btn-save:hover { background: #047857; }
+
+    /* Test Email & Switch Card */
+    .test-email-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      align-items: flex-end;
+    }
+    .test-email-row .form-group {
+      flex: 1;
+      margin-bottom: 0;
+    }
+    .btn-send-test {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-send-test:hover { background: #f8fafc; }
+
+    /* Toggle Switch */
+    .switch-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #cbd5e1;
+      transition: .2s;
+      border-radius: 26px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #065f46; }
+    input:checked + .slider:before { transform: translateX(22px); }
+
+    .switch-label-title { font-weight: 600; font-size: 14px; color: #0f172a; }
+    .switch-label-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+    .modal-card {
+      background: #ffffff;
+      border-radius: 12px;
+      width: 480px;
+      max-width: 90vw;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      border: 1px solid var(--border-color);
+      animation: modalFadeIn 0.2s ease;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4px;
+    }
+    .modal-title { font-size: 18px; font-weight: 700; color: #0f172a; }
+    .modal-close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b; }
+    .modal-subtitle { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+
+    /* Team Table Styles */
+    .team-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .team-table th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .team-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 13px;
+    }
+    .member-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .member-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: #334155;
+      font-weight: 700;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .member-name { font-weight: 600; color: #0f172a; }
+    .member-email { font-size: 12px; color: #64748b; }
+    .role-badge { font-weight: 500; color: #334155; }
+    .status-badge-active {
+      background: #dcfce7;
+      color: #166534;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .hidden { display: none !important; }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 1000;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Controls for Demo Helper */
+    .demo-bar {
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.9);
+      color: #ffffff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 999;
+    }
+    .demo-bar button {
+      background: #334155;
+      color: #ffffff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+    .demo-bar button:hover { background: #475569; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Subscription Alert Banner -->
+  <div class="top-banner">
+    <div>
+      Your Billigo subscription ends on <strong>23 November 2026</strong> (4 days left). To renew, contact Billigo support at 
+      <a href="mailto:support@projectw.in">support@projectw.in</a> or <strong>+91 9376658932</strong>.
+    </div>
+    <div>
+      <span style="background: #fef08a; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 11px;">Active Plan</span>
+    </div>
+  </div>
+
+  <div class="app-layout">
+    <!-- Primary Sidebar -->
+    <aside class="primary-sidebar">
+      <div>
+        <div class="org-switcher">
+          <div class="org-avatar">S</div>
+          <div class="org-details">
+            <div class="org-name">Shiv Enterprise</div>
+            <div class="org-sub">Bhavnagar</div>
+          </div>
+          <div style="font-size: 12px; color: #94a3b8;">↕</div>
+        </div>
+
+        <div class="search-box">
+          <div class="search-input-wrap">
+            <span>🔍</span>
+            <span>Search</span>
+            <span class="search-shortcut">Ctrl K</span>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <button class="nav-item"><span class="icon">📊</span> Dashboard</button>
+          <button class="nav-item"><span class="icon">🧾</span> Sales</button>
+          <button class="nav-item"><span class="icon">🛒</span> Purchases</button>
+          <button class="nav-item"><span class="icon">👥</span> Customers</button>
+          <button class="nav-item"><span class="icon">📦</span> Products & services</button>
+          <button class="nav-item"><span class="icon">💳</span> Payments</button>
+          <button class="nav-item"><span class="icon">💲</span> Expenses</button>
+          <button class="nav-item"><span class="icon">📈</span> Reports</button>
+          <button class="nav-item"><span class="icon">📁</span> Documents</button>
+          <button class="nav-item active"><span class="icon">⚙️</span> Settings</button>
+        </nav>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="user-avatar">AP</div>
+        <div class="user-info">
+          <div class="user-name">Aryan Pandya</div>
+          <div class="user-role">Admin</div>
+        </div>
+        <div class="bell-icon">
+          🔔
+          <span class="bell-badge">1</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Secondary Settings Nav -->
+    <div class="settings-subnav">
+      <div class="settings-heading">Settings</div>
+
+      <div class="subnav-category">Business</div>
+      <div class="subnav-item">Business profile</div>
+      <div class="subnav-item">Bank & UPI</div>
+
+      <div class="subnav-category">Billing</div>
+      <div class="subnav-item">Invoices & numbering</div>
+      <div class="subnav-item">Taxes & units</div>
+
+      <div class="subnav-category">Email</div>
+      <div id="subnavEmail" class="subnav-item active" onclick="switchSettingsTab('email')">Email (SMTP)</div>
+      <div class="subnav-item">Email templates</div>
+      <div class="subnav-item">Email log</div>
+
+      <div class="subnav-category">Team</div>
+      <div id="subnavTeam" class="subnav-item" onclick="switchSettingsTab('team')">Team members</div>
+      <div class="subnav-item">Roles & permissions</div>
+      <div class="subnav-item">Audit log</div>
+
+      <div class="subnav-category">You</div>
+      <div class="subnav-item">Notifications</div>
+      <div class="subnav-item">Account & security</div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- VIEW 1: EMAIL (SMTP) -->
+      <div id="viewEmailSection">
+        <div class="breadcrumb">Email</div>
+        <h1 class="content-title">Email (SMTP)</h1>
+        <p class="content-subtitle">
+          Invoices and receipts are sent from your own mailbox, so replies come to you. Use your provider's SMTP details; for Gmail or Microsoft 365 with 2-step verification, create an app password.
+        </p>
+
+      <!-- Status banner -->
+      <div id="statusAlert" class="status-alert warning">
+        <div>⚠️</div>
+        <div>
+          <div class="status-alert-title">Not tested yet</div>
+          <div>Test the connection before saving so invoices do not fail to send.</div>
+        </div>
+      </div>
+
+      <!-- Card 1: Provider -->
+      <div class="card">
+        <div class="card-heading">Provider</div>
+        <div class="card-sub">Pick your provider to fill in the server, or enter it yourself.</div>
+
+        <div class="provider-grid">
+          <button type="button" class="provider-btn" onclick="selectProvider('google')">Google Workspace / Gmail</button>
+          <button type="button" class="provider-btn" onclick="selectProvider('office365')">Microsoft 365 / Outlook</button>
+          <button type="button" class="provider-btn" onclick="selectProvider('zoho')">Zoho Mail (India)</button>
+          <button type="button" class="provider-btn" onclick="selectProvider('ses')">Amazon SES (Mumbai)</button>
+          <button type="button" id="btnHostinger" class="provider-btn selected" onclick="selectProvider('hostinger')">Hostinger</button>
+          <button type="button" class="provider-btn" onclick="selectProvider('godaddy')">GoDaddy</button>
+        </div>
+      </div>
+
+      <!-- Card 2: Server -->
+      <div class="card">
+        <div class="card-heading">Server</div>
+
+        <div class="form-group">
+          <label for="smtpServer">SMTP server</label>
+          <input type="text" id="smtpServer" placeholder="e.g. smtp.hostinger.com" value="smtp.hostinger.com">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="smtpPort">Port</label>
+            <input type="text" id="smtpPort" placeholder="465" value="465">
+          </div>
+          <div class="form-group">
+            <label>Encryption</label>
+            <div class="segmented-control">
+              <button type="button" id="encSSL" class="segmented-btn active" onclick="setEncryption('SSL/TLS')">SSL/TLS</button>
+              <button type="button" id="encSTARTTLS" class="segmented-btn" onclick="setEncryption('STARTTLS')">STARTTLS</button>
+              <button type="button" id="encNone" class="segmented-btn" onclick="setEncryption('None')">None</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="smtpUsername">Username</label>
+            <input type="text" id="smtpUsername" placeholder="e.g. aryan@projectw.in" value="aryan@projectw.in">
+          </div>
+          <div class="form-group">
+            <label for="smtpPassword">Password</label>
+            <div class="password-wrap">
+              <input type="password" id="smtpPassword" placeholder="Saved · leave blank to keep" value="">
+              <button type="button" class="btn-show-pass" onclick="togglePass()">Show</button>
+            </div>
+            <span class="field-hint">Stored encrypted. It is never shown again after saving.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Sender -->
+      <div class="card">
+        <div class="card-heading">Sender</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fromName">From name</label>
+            <input type="text" id="fromName" placeholder="e.g. Shiv Enterprise" value="Shiv Enterprise">
+          </div>
+          <div class="form-group">
+            <label for="fromEmail">From email</label>
+            <input type="text" id="fromEmail" placeholder="e.g. aryan@projectw.in" value="aryan@projectw.in">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="replyTo">Reply-to (optional)</label>
+          <input type="text" id="replyTo" placeholder="e.g. aryan@projectw.in" value="aryan@projectw.in">
+        </div>
+
+        <div class="action-row">
+          <button type="button" class="btn-test" onclick="handleTestConnection()">
+            <span>🔧</span> Test connection
+          </button>
+          <button type="button" class="btn-save" onclick="handleSaveSettings()">
+            Save settings
+          </button>
+        </div>
+      </div>
+
+      <!-- Card 4: Test email and switch -->
+      <div class="card">
+        <div class="card-heading">Test email and switch</div>
+        <div class="card-sub">Send a real message through the saved settings.</div>
+
+        <div class="test-email-row">
+          <div class="form-group">
+            <label for="testEmailTo">Send a test email to</label>
+            <input type="text" id="testEmailTo" placeholder="aryanpandya0505@gmail.com" value="aryanpandya0505@gmail.com">
+          </div>
+          <button type="button" class="btn-send-test" onclick="handleSendTestEmail()">Send test email</button>
+        </div>
+
+        <div class="switch-row">
+          <label class="switch">
+            <input type="checkbox" id="switchSendEmails" checked>
+            <span class="slider"></span>
+          </label>
+          <div>
+            <div class="switch-label-title">Send emails from this account</div>
+            <div class="switch-label-desc">Switch off to stop all outgoing invoice and receipt emails without deleting the settings.</div>
+          </div>
+        </div>
+      </div>
+      </div><!-- End viewEmailSection -->
+
+      <!-- VIEW 2: TEAM MEMBERS -->
+      <div id="viewTeamSection" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+          <div>
+            <div class="breadcrumb">Team</div>
+            <h1 class="content-title">Team members</h1>
+            <p class="content-subtitle" style="margin-bottom: 0;">
+              Everyone who can sign in to this business. What each person can do comes from their role.
+            </p>
+          </div>
+          <button type="button" class="btn-save" onclick="openAddMemberModal()">
+            Add member
+          </button>
+        </div>
+
+        <table class="team-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Role</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="teamTableBody">
+            <tr>
+              <td>
+                <div class="member-cell">
+                  <div class="member-avatar">AP</div>
+                  <div>
+                    <div class="member-name">Aryan Pandya <span style="color:#64748b; font-weight:normal;">(you)</span></div>
+                    <div class="member-email">aryanpandya0505@gmail.com · last in 20 Nov 2026</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="role-badge">Admin · Owner</span></td>
+              <td><span class="status-badge-active">Active</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div><!-- End viewTeamSection -->
+    </main>
+  </div>
+
+  <!-- Toast Element -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Modal: Add Team Member -->
+  <div id="modalAddMember" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Add team member</div>
+        <button class="modal-close-btn" onclick="closeAddMemberModal()">✕</button>
+      </div>
+      <div class="modal-subtitle">If they already have a Billigo login, this business is added to it.</div>
+
+      <form id="formAddMember" onsubmit="submitAddMember(event)">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label for="newMemberEmail">Email</label>
+          <input type="email" id="newMemberEmail" name="email" required placeholder="you@business.in">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label for="newMemberName">Name</label>
+          <input type="text" id="newMemberName" name="name" required placeholder="Full name">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label for="newMemberRole">Role</label>
+          <select id="newMemberRole" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 13px;">
+            <option value="Admin">Admin — Full access to this business, including team and settings. Cannot be edited.</option>
+            <option value="Accountant">Accountant — Payments, expenses and reports. Read-only on sales documents.</option>
+            <option value="Manager">Manager — Runs day-to-day billing. Cannot change team or email settings.</option>
+            <option value="Sales" selected>Sales — Creates quotations and invoices for customers.</option>
+            <option value="Staff">Staff — Creates draft invoices. Cannot finalize or see reports.</option>
+          </select>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn-test" onclick="closeAddMemberModal()">Cancel</button>
+          <button type="submit" class="btn-save">Add member</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Demo Toolbar -->
+  <div class="demo-bar">
+    <span>BilliGo Demo Controls:</span>
+    <button onclick="clearToEmptyState()">Clear to Empty State</button>
+    <button onclick="fillHostingerDemo()">Pre-fill Hostinger</button>
+  </div>
+
+  <script>
+    let activeEncryption = "SSL/TLS";
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.innerHTML = msg;
+      toast.style.display = "flex";
+      setTimeout(() => { toast.style.display = "none"; }, 3500);
+    }
+
+    function selectProvider(p) {
+      document.querySelectorAll(".provider-btn").forEach(btn => btn.classList.remove("selected"));
+      
+      const serverInput = document.getElementById("smtpServer");
+      const portInput = document.getElementById("smtpPort");
+
+      if (p === "hostinger") {
+        document.getElementById("btnHostinger").classList.add("selected");
+        serverInput.value = "smtp.hostinger.com";
+        portInput.value = "465";
+        setEncryption("SSL/TLS");
+      } else if (p === "google") {
+        serverInput.value = "smtp.gmail.com";
+        portInput.value = "587";
+        setEncryption("STARTTLS");
+      } else if (p === "office365") {
+        serverInput.value = "smtp.office365.com";
+        portInput.value = "587";
+        setEncryption("STARTTLS");
+      } else if (p === "zoho") {
+        serverInput.value = "smtp.zoho.in";
+        portInput.value = "465";
+        setEncryption("SSL/TLS");
+      } else if (p === "ses") {
+        serverInput.value = "email-smtp.ap-south-1.amazonaws.com";
+        portInput.value = "587";
+        setEncryption("STARTTLS");
+      } else if (p === "godaddy") {
+        serverInput.value = "smtpout.secureserver.net";
+        portInput.value = "465";
+        setEncryption("SSL/TLS");
+      }
+    }
+
+    function setEncryption(enc) {
+      activeEncryption = enc;
+      document.getElementById("encSSL").classList.toggle("active", enc === "SSL/TLS");
+      document.getElementById("encSTARTTLS").classList.toggle("active", enc === "STARTTLS");
+      document.getElementById("encNone").classList.toggle("active", enc === "None");
+    }
+
+    function togglePass() {
+      const pass = document.getElementById("smtpPassword");
+      pass.type = pass.type === "password" ? "text" : "password";
+    }
+
+    function handleTestConnection() {
+      const server = document.getElementById("smtpServer").value;
+      const user = document.getElementById("smtpUsername").value;
+      const pass = document.getElementById("smtpPassword").value;
+      
+      if (!server || !user) {
+        showToast("❌ Please fill in the SMTP server and username first.");
+        return;
+      }
+
+      showToast("🔄 Testing connection to " + server + "...");
+      setTimeout(() => {
+        const alertEl = document.getElementById("statusAlert");
+        if (pass.toLowerCase().includes("wrong") || pass.toLowerCase().includes("fail") || pass === "123") {
+          alertEl.className = "status-alert danger";
+          alertEl.innerHTML = `<div>❌</div><div><div class="status-alert-title">Connection failed</div><div>535 5.7.8 Authentication failed. Check the username and password. If 2-step verification is on for ${user}, create an app password and use it here.</div></div>`;
+          showToast("❌ 535 Authentication failed.");
+        } else {
+          alertEl.className = "status-alert success";
+          alertEl.innerHTML = `<div>✅</div><div><div class="status-alert-title">Connection successful!</div><div>Connected to ${server}:${document.getElementById("smtpPort").value} with ${activeEncryption}.</div></div>`;
+          showToast("✅ Connection test successful!");
+        }
+      }, 800);
+    }
+
+    function handleSaveSettings() {
+      showToast("💾 SMTP settings saved successfully!");
+    }
+
+    function handleSendTestEmail() {
+      const target = document.getElementById("testEmailTo").value;
+      if (!target) {
+        showToast("❌ Please enter a recipient email address.");
+        return;
+      }
+      showToast("📤 Sending test email to " + target + "...");
+      setTimeout(() => {
+        showToast("✅ Test email sent to " + target + "! Please check your inbox/spam.");
+      }, 900);
+    }
+
+    // Settings Tab Switching (Email vs Team Members)
+    function switchSettingsTab(tab) {
+      const isEmail = tab === 'email';
+      document.getElementById('subnavEmail').classList.toggle('active', isEmail);
+      document.getElementById('subnavTeam').classList.toggle('active', !isEmail);
+      document.getElementById('viewEmailSection').classList.toggle('hidden', !isEmail);
+      document.getElementById('viewTeamSection').classList.toggle('hidden', isEmail);
+    }
+
+    function openAddMemberModal() {
+      document.getElementById('modalAddMember').classList.remove('hidden');
+      document.getElementById('newMemberEmail').focus();
+    }
+
+    function closeAddMemberModal() {
+      document.getElementById('modalAddMember').classList.add('hidden');
+    }
+
+    function submitAddMember(e) {
+      e.preventDefault();
+      const email = document.getElementById('newMemberEmail').value.trim();
+      const name = document.getElementById('newMemberName').value.trim();
+      const role = document.getElementById('newMemberRole').value;
+
+      if (!email || !name) return;
+
+      const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() || 'TM';
+
+      const tbody = document.getElementById('teamTableBody');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div class="member-cell">
+            <div class="member-avatar">${initials}</div>
+            <div>
+              <div class="member-name">${name}</div>
+              <div class="member-email">${email} · added just now</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="role-badge">${role}</span></td>
+        <td><span class="status-badge-active">Active</span></td>
+      `;
+      tbody.appendChild(tr);
+
+      closeAddMemberModal();
+      document.getElementById('formAddMember').reset();
+      showToast(`✅ Member "${name}" added as ${role}!`);
+    }
+
+    function clearToEmptyState() {
+      document.getElementById("smtpServer").value = "";
+      document.getElementById("smtpPort").value = "";
+      document.getElementById("smtpUsername").value = "";
+      document.getElementById("smtpPassword").value = "";
+      document.getElementById("fromName").value = "";
+      document.getElementById("fromEmail").value = "";
+      document.getElementById("replyTo").value = "";
+      document.getElementById("testEmailTo").value = "";
+      document.querySelectorAll(".provider-btn").forEach(btn => btn.classList.remove("selected"));
+      const alertEl = document.getElementById("statusAlert");
+      alertEl.className = "status-alert warning";
+      alertEl.innerHTML = `<div>⚠️</div><div><div class="status-alert-title">Not tested yet</div><div>Test the connection before saving so invoices do not fail to send.</div></div>`;
+      showToast("🧹 Form cleared to initial empty state.");
+    }
+
+    function fillHostingerDemo() {
+      selectProvider("hostinger");
+      document.getElementById("smtpUsername").value = "aryan@projectw.in";
+      document.getElementById("smtpPassword").value = "demo-password";
+      document.getElementById("fromName").value = "Shiv Enterprise";
+      document.getElementById("fromEmail").value = "aryan@projectw.in";
+      document.getElementById("replyTo").value = "aryan@projectw.in";
+      document.getElementById("testEmailTo").value = "aryanpandya0505@gmail.com";
+      document.getElementById("switchSendEmails").checked = true;
+      showToast("✨ Pre-filled Hostinger private domain values.");
+    }
+  </script>
+</body>
+</html>

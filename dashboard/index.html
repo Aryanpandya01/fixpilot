@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FixPilot Support Desk — BilliGo</title>
+  <style>
+    :root {
+      --bg-sidebar: #0f172a;
+      --bg-main: #f8fafc;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent-blue: #2563eb;
+      --accent-blue-hover: #1d4ed8;
+      --success: #16a34a;
+      --success-bg: #dcfce7;
+      --warning: #ea580c;
+      --warning-bg: #ffedd5;
+      --danger: #dc2626;
+      --danger-bg: #fee2e2;
+      --neutral-badge: #64748b;
+      --neutral-badge-bg: #f1f5f9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 18px;
+      line-height: 1.5;
+      color: var(--text-main);
+      background-color: var(--bg-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    aside {
+      width: 280px;
+      background-color: var(--bg-sidebar);
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      border-right: 1px solid #1e293b;
+    }
+
+    .sidebar-header {
+      padding: 24px 20px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .brand-title {
+      font-size: 22px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-subtitle {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .sidebar-nav {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-new-request {
+      background-color: var(--accent-blue);
+      color: #ffffff;
+      border: none;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-new-request:hover {
+      background-color: var(--accent-blue-hover);
+    }
+
+    .sidebar-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 16px 20px 8px;
+    }
+
+    .recent-sessions-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .recent-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #1e293b;
+      cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.1s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      border: 1px solid transparent;
+    }
+
+    .recent-item:hover {
+      background-color: #334155;
+    }
+
+    .recent-item.active {
+      border-color: var(--accent-blue);
+      background-color: #1e3a8a;
+    }
+
+    .recent-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .recent-code {
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 16px;
+      color: #38bdf8;
+      letter-spacing: 1px;
+    }
+
+    .recent-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .recent-query {
+      font-size: 13px;
+      color: #cbd5e1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid #1e293b;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #94a3b8;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: #94a3b8;
+      transition: background-color 0.2s ease;
+    }
+
+    .status-dot.online {
+      background-color: var(--success);
+      box-shadow: 0 0 8px rgba(22, 163, 74, 0.6);
+    }
+
+    .status-dot.offline {
+      background-color: var(--danger);
+      box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
+    }
+
+    /* Main Area */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      padding: 24px 28px;
+    }
+
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 15px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    textarea, select {
+      width: 100%;
+      font-family: inherit;
+      font-size: 17px;
+      padding: 12px 16px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      background: #ffffff;
+      color: var(--text-main);
+    }
+
+    textarea:focus, select:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .prompt-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .chip {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .chip:hover {
+      background: #e2e8f0;
+      border-color: #94a3b8;
+      color: #0f172a;
+    }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-blue);
+      color: #ffffff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-blue-hover);
+    }
+
+    .form-hint {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* Code Card */
+    .code-card {
+      background: #eff6ff;
+      border: 2px dashed #93c5fd;
+      text-align: center;
+      padding: 28px;
+    }
+
+    .code-instruction {
+      font-size: 18px;
+      color: #1e40af;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .code-display-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin: 16px 0;
+    }
+
+    .code-display {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 64px;
+      font-weight: 800;
+      letter-spacing: 12px;
+      color: #1e3a8a;
+      background: #ffffff;
+      padding: 8px 24px;
+      border-radius: 12px;
+      border: 1px solid #bfdbfe;
+      box-shadow: 0 2px 4px rgba(30, 58, 138, 0.08);
+    }
+
+    .btn-copy {
+      background: #ffffff;
+      color: var(--accent-blue);
+      border: 2px solid var(--accent-blue);
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-copy:hover {
+      background: var(--accent-blue);
+      color: #ffffff;
+    }
+
+    /* Live Session Card */
+    .session-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .session-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .badge-waiting {
+      background-color: var(--neutral-badge-bg);
+      color: var(--neutral-badge);
+      border: 1px solid #cbd5e1;
+    }
+
+    .badge-running {
+      background-color: #dbeafe;
+      color: var(--accent-blue);
+      border: 1px solid #93c5fd;
+      animation: pulse 1.6s infinite ease-in-out;
+    }
+
+    .badge-solved {
+      background-color: var(--success-bg);
+      color: var(--success);
+      border: 1px solid #86efac;
+    }
+
+    .badge-escalated {
+      background-color: var(--warning-bg);
+      color: var(--warning);
+      border: 1px solid #fdba74;
+    }
+
+    .badge-stopped {
+      background-color: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid #fca5a5;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+
+    .session-timer {
+      font-family: monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: #334155;
+      background: #f1f5f9;
+      padding: 6px 14px;
+      border-radius: 8px;
+    }
+
+    .session-query-text {
+      font-size: 18px;
+      color: #1e293b;
+      margin-bottom: 20px;
+      padding: 12px 16px;
+      background: #f8fafc;
+      border-left: 4px solid var(--accent-blue);
+      border-radius: 0 8px 8px 0;
+    }
+
+    /* Result Card */
+    .result-card {
+      margin-bottom: 24px;
+      padding: 20px 24px;
+      border-radius: 12px;
+      border: 2px solid transparent;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .result-card.solved {
+      background-color: var(--success-bg);
+      border-color: var(--success);
+      color: #14532d;
+    }
+
+    .result-card.escalated {
+      background-color: var(--warning-bg);
+      border-color: var(--warning);
+      color: #7c2d12;
+    }
+
+    .result-card.stopped {
+      background-color: var(--danger-bg);
+      border-color: var(--danger);
+      color: #7f1d1d;
+    }
+
+    .result-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .result-summary {
+      font-size: 18px;
+      line-height: 1.5;
+    }
+
+    /* Timeline */
+    .timeline-container {
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      background: #ffffff;
+      max-height: 420px;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .timeline-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #f8fafc;
+      border-left: 4px solid #cbd5e1;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .timeline-row.intent { border-left-color: var(--accent-blue); background: #f0f7ff; }
+    .timeline-row.done { border-left-color: var(--success); background: #f0fdf4; }
+    .timeline-row.approval { border-left-color: var(--warning); background: #fffbeb; }
+    .timeline-row.escalate { border-left-color: var(--warning); background: #fff7ed; }
+    .timeline-row.error { border-left-color: var(--danger); background: #fef2f2; }
+    .timeline-row.stopped { border-left-color: var(--danger); background: #fef2f2; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .timeline-time {
+      font-family: monospace;
+      font-size: 14px;
+      color: #64748b;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .timeline-icon {
+      font-size: 20px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .timeline-body {
+      flex: 1;
+      font-size: 17px;
+      color: #1e293b;
+    }
+
+    .timeline-action {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #e2e8f0;
+      color: #475569;
+      margin-left: 8px;
+    }
+
+    .timeline-empty {
+      text-align: center;
+      padding: 30px;
+      color: #94a3b8;
+      font-size: 16px;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      background-color: var(--danger);
+      color: #ffffff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast for network errors -->
+  <div id="toast" class="toast">⚠️ Server not reachable - retrying...</div>
+
+  <!-- Left Sidebar -->
+  <aside>
+    <div class="sidebar-header">
+      <div class="brand-title">✈️ FixPilot</div>
+      <div class="brand-subtitle">BilliGo AI Support Desk</div>
+    </div>
+
+    <div class="sidebar-nav">
+      <button id="btnNewRequestSidebar" class="btn-new-request">
+        <span>➕</span> New Request
+      </button>
+      <a href="https://billigo.projectw.in" target="_blank" style="text-decoration: none; color: #cbd5e1; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 14px; margin-top: 6px; background: rgba(37,99,235,0.2); border: 1px solid rgba(59,130,246,0.3); transition: background 0.15s ease;">
+        <span>🌐</span> Live BilliGo SaaS ↗
+      </a>
+      <a href="/demo" target="_blank" style="text-decoration: none; color: #cbd5e1; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 14px; margin-top: 4px; background: rgba(255,255,255,0.07); transition: background 0.15s ease;">
+        <span>💻</span> Offline Demo App ↗
+      </a>
+      <a href="/explainer" target="_blank" style="text-decoration: none; color: #cbd5e1; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 14px; margin-top: 4px; background: rgba(255,255,255,0.07); transition: background 0.15s ease;">
+        <span>💡</span> Interactive Explainer ↗
+      </a>
+      <a href="/pitch" target="_blank" style="text-decoration: none; color: #cbd5e1; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 14px; margin-top: 4px; background: rgba(255,255,255,0.07); transition: background 0.15s ease;">
+        <span>📊</span> Pitch Deck ↗
+      </a>
+    </div>
+
+    <div class="sidebar-section-title">Recent Sessions</div>
+    <div id="recentSessionsList" class="recent-sessions-list">
+      <!-- Populated via GET /sessions -->
+    </div>
+
+    <div class="sidebar-footer">
+      <div id="serverStatusDot" class="status-dot"></div>
+      <span id="serverStatusText">Checking server...</span>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <main>
+
+    <!-- Card 1: New request -->
+    <section id="cardNewRequest" class="card">
+      <div class="card-title">
+        <span>📝 New Support Request</span>
+      </div>
+      <form id="formNewSession">
+        <div class="form-group">
+          <label for="queryInput">Customer's query</label>
+          <textarea
+            id="queryInput"
+            placeholder="e.g. Customer wants to configure custom private domain email (Hostinger SMTP: aryan@projectw.in) and send a test mail to aryanpandya0505@gmail.com"
+            required
+          ></textarea>
+          <div class="prompt-chips">
+            <span class="chip" data-query="Customer wants to add team member: Rahul Sharma, email: rahul@projectw.in, role: Sales">👥 Add Team Member (Sales: Rahul)</span>
+            <span class="chip" data-query="Customer wants to add team member: Priya Patel, email: priya@projectw.in, role: Accountant">💼 Add Team Member (Accountant: Priya)</span>
+            <span class="chip" data-query="Configure custom private domain email (Hostinger SMTP for aryan@projectw.in) and send a test email to aryanpandya0505@gmail.com">⚡ Hostinger SMTP (On-Screen Password)</span>
+            <span class="chip" data-query="Configure Hostinger SMTP for aryan@projectw.in on port 465 with password: [YOUR_PASSWORD] and send test email to aryanpandya0505@gmail.com">🔑 Hostinger SMTP (Query Password)</span>
+            <span class="chip" data-query="Send a test email to aryanpandya0505@gmail.com and ensure outgoing email switch is active">📬 Send Test Email</span>
+            <span class="chip" data-query="Create a new GST sales invoice for customer in BilliGo">🧾 New Sales Invoice</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="vendorSelect">Software / Vendor</label>
+          <select id="vendorSelect">
+            <option value="billigo" selected>BilliGo (Cloud Billing & ERP)</option>
+            <option value="billing_app">BilliGo (Legacy ID: billing_app)</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" id="btnGenerate" class="btn-primary">
+            🚀 Generate FixPilot code
+          </button>
+          <span class="form-hint">Tip: Press <strong>Ctrl+Enter</strong> to submit</span>
+        </div>
+      </form>
+    </section>
+
+    <!-- Card 2: Code card -->
+    <section id="cardCode" class="card code-card hidden">
+      <div class="code-instruction">Ask the customer to open FixPilot → Support code → enter this code:</div>
+      <div class="code-display-wrap">
+        <div id="codeDisplay" class="code-display">--- ---</div>
+        <button id="btnCopyCode" class="btn-copy">
+          <span id="copyIcon">📋</span> <span id="copyText">Copy</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Card 3: Live session -->
+    <section id="cardLive" class="card hidden">
+      <div class="session-header-row">
+        <div id="statusBadge" class="session-status-badge badge-waiting">
+          Waiting for customer…
+        </div>
+        <div id="sessionTimer" class="session-timer">0:00</div>
+      </div>
+
+      <div id="sessionQueryDisplay" class="session-query-text"></div>
+
+      <!-- Result Card (shown when solved/escalated/stopped) -->
+      <div id="resultCard" class="result-card hidden">
+        <div id="resultTitle" class="result-title"></div>
+        <div id="resultSummary" class="result-summary"></div>
+      </div>
+
+      <!-- Timeline -->
+      <div style="font-weight: 700; font-size: 16px; margin-bottom: 8px; color: #334155;">
+        Live Execution Timeline
+      </div>
+      <div id="timelineContainer" class="timeline-container">
+        <div id="timelineEmpty" class="timeline-empty">Waiting for events from customer's PC...</div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // State
+    const API_BASE = window.location.origin;
+    let currentCode = null;
+    let currentStatus = "waiting";
+    let acceptedAt = null;
+    let finishedAt = null;
+    let renderedEventsCount = 0;
+    let pollInterval = null;
+    let timerInterval = null;
+    let serverHealthy = true;
+
+    // Elements
+    const toast = document.getElementById("toast");
+    const serverStatusDot = document.getElementById("serverStatusDot");
+    const serverStatusText = document.getElementById("serverStatusText");
+    const recentSessionsList = document.getElementById("recentSessionsList");
+    const btnNewRequestSidebar = document.getElementById("btnNewRequestSidebar");
+
+    const cardNewRequest = document.getElementById("cardNewRequest");
+    const formNewSession = document.getElementById("formNewSession");
+    const queryInput = document.getElementById("queryInput");
+    const vendorSelect = document.getElementById("vendorSelect");
+
+    const cardCode = document.getElementById("cardCode");
+    const codeDisplay = document.getElementById("codeDisplay");
+    const btnCopyCode = document.getElementById("btnCopyCode");
+    const copyText = document.getElementById("copyText");
+
+    const cardLive = document.getElementById("cardLive");
+    const statusBadge = document.getElementById("statusBadge");
+    const sessionTimer = document.getElementById("sessionTimer");
+    const sessionQueryDisplay = document.getElementById("sessionQueryDisplay");
+    const resultCard = document.getElementById("resultCard");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultSummary = document.getElementById("resultSummary");
+    const timelineContainer = document.getElementById("timelineContainer");
+    const timelineEmpty = document.getElementById("timelineEmpty");
+
+    // Network error toast helper
+    function setServerError(hasError) {
+      if (hasError) {
+        toast.style.display = "flex";
+        serverStatusDot.className = "status-dot offline";
+        serverStatusText.textContent = "Server: Offline";
+      } else {
+        toast.style.display = "none";
+        serverStatusDot.className = "status-dot online";
+        serverStatusText.textContent = "Server: Online";
+      }
+    }
+
+    // Health check (every 5s)
+    async function checkHealth() {
+      try {
+        const res = await fetch(`${API_BASE}/health`);
+        if (res.ok) {
+          setServerError(false);
+        } else {
+          setServerError(true);
+        }
+      } catch (err) {
+        setServerError(true);
+      }
+    }
+
+    // Format 6-digit code for display: "482 913"
+    function formatCode(code) {
+      if (!code || code.length !== 6) return code || "------";
+      return `${code.slice(0, 3)} ${code.slice(3)}`;
+    }
+
+    // Format seconds to M:SS
+    function formatDuration(seconds) {
+      const s = Math.max(0, Math.floor(seconds));
+      const m = Math.floor(s / 60);
+      const remS = s % 60;
+      return `${m}:${remS.toString().padStart(2, "0")}`;
+    }
+
+    // Format timestamp to HH:MM:SS
+    function formatTimestamp(ts) {
+      const d = ts ? new Date(ts * 1000) : new Date();
+      return d.toTimeString().split(" ")[0];
+    }
+
+    // Icon helper by event type
+    function getEventIcon(type) {
+      switch (type) {
+        case "intent": return "🤖";
+        case "approval": return "✋";
+        case "highlight": return "👉";
+        case "done": return "✅";
+        case "escalate": return "⚠️";
+        case "error": return "❌";
+        case "stopped": return "🛑";
+        default: return "📌";
+      }
+    }
+
+    // Update Timer display
+    function updateTimer() {
+      if (!acceptedAt) {
+        sessionTimer.textContent = "0:00";
+        return;
+      }
+      const now = finishedAt ? finishedAt : (Date.now() / 1000);
+      const elapsed = Math.max(0, now - acceptedAt);
+      const durStr = formatDuration(elapsed);
+
+      if (currentStatus === "solved") {
+        sessionTimer.textContent = `Solved in ${durStr}`;
+      } else if (currentStatus === "escalated") {
+        sessionTimer.textContent = `Escalated in ${durStr}`;
+      } else if (currentStatus === "stopped") {
+        sessionTimer.textContent = `Stopped in ${durStr}`;
+      } else {
+        sessionTimer.textContent = durStr;
+      }
+    }
+
+    // Update Status Badge UI
+    function updateStatusBadge(status) {
+      currentStatus = status;
+      statusBadge.className = "session-status-badge";
+
+      switch (status) {
+        case "waiting":
+          statusBadge.classList.add("badge-waiting");
+          statusBadge.innerHTML = "Waiting for customer…";
+          break;
+        case "running":
+          statusBadge.classList.add("badge-running");
+          statusBadge.innerHTML = "🤖 AI is working";
+          break;
+        case "solved":
+          statusBadge.classList.add("badge-solved");
+          statusBadge.innerHTML = "✅ Solved";
+          break;
+        case "escalated":
+          statusBadge.classList.add("badge-escalated");
+          statusBadge.innerHTML = "⚠️ Needs human support";
+          break;
+        case "stopped":
+          statusBadge.classList.add("badge-stopped");
+          statusBadge.innerHTML = "🛑 Stopped by customer";
+          break;
+        default:
+          statusBadge.classList.add("badge-waiting");
+          statusBadge.textContent = status;
+      }
+    }
+
+    // Render new events without flickering
+    function appendEvents(events) {
+      if (!events || events.length === 0) return;
+      if (events.length > renderedEventsCount) {
+        if (timelineEmpty) timelineEmpty.style.display = "none";
+
+        for (let i = renderedEventsCount; i < events.length; i++) {
+          const ev = events[i];
+          const row = document.createElement("div");
+          row.className = `timeline-row ${ev.type || ""}`;
+
+          const timeSpan = document.createElement("span");
+          timeSpan.className = "timeline-time";
+          timeSpan.textContent = formatTimestamp(ev.ts);
+
+          const iconSpan = document.createElement("span");
+          iconSpan.className = "timeline-icon";
+          iconSpan.textContent = getEventIcon(ev.type);
+
+          const bodySpan = document.createElement("div");
+          bodySpan.className = "timeline-body";
+          bodySpan.textContent = ev.text || "";
+
+          if (ev.action) {
+            const actionBadge = document.createElement("span");
+            actionBadge.className = "timeline-action";
+            actionBadge.textContent = ev.action;
+            bodySpan.appendChild(actionBadge);
+          }
+
+          row.appendChild(timeSpan);
+          row.appendChild(iconSpan);
+          row.appendChild(bodySpan);
+
+          timelineContainer.appendChild(row);
+        }
+
+        renderedEventsCount = events.length;
+        timelineContainer.scrollTop = timelineContainer.scrollHeight;
+      }
+    }
+
+    // Poll session events
+    async function pollSessionEvents() {
+      if (!currentCode) return;
+      try {
+        const res = await fetch(`${API_BASE}/sessions/${currentCode}/events`);
+        if (!res.ok) {
+          if (res.status === 404) {
+            // Session expired or server restarted -> stop polling to avoid log flooding
+            clearInterval(pollInterval);
+            pollInterval = null;
+            clearInterval(timerInterval);
+            timerInterval = null;
+            updateStatusBadge("stopped");
+            liveBadge.textContent = "Session Expired";
+            return;
+          }
+          setServerError(true);
+          return;
+        }
+        setServerError(false);
+        const data = await res.json();
+
+        // Update accepted/finished timestamps
+        if (data.accepted_at) acceptedAt = data.accepted_at;
+        if (data.finished_at) finishedAt = data.finished_at;
+
+        // Update status badge
+        updateStatusBadge(data.status);
+        updateTimer();
+
+        // Append any new events
+        appendEvents(data.events);
+
+        // Handle terminal states
+        if (["solved", "escalated", "stopped"].includes(data.status)) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+          clearInterval(timerInterval);
+          timerInterval = null;
+          updateTimer();
+
+          // Show result card
+          resultCard.className = `result-card ${data.status}`;
+          resultCard.classList.remove("hidden");
+
+          if (data.status === "solved") {
+            resultTitle.innerHTML = "✅ Problem Solved Successfully";
+          } else if (data.status === "escalated") {
+            resultTitle.innerHTML = "⚠️ Escalated to Human Support";
+          } else {
+            resultTitle.innerHTML = "🛑 Session Stopped by Customer";
+          }
+          resultSummary.textContent = data.summary || "No summary provided.";
+
+          // Refresh recent sessions list to reflect final status
+          fetchRecentSessions();
+        }
+      } catch (err) {
+        setServerError(true);
+      }
+    }
+
+    // Start polling active session
+    function startSessionTracking(code, queryText) {
+      currentCode = code;
+      renderedEventsCount = 0;
+      acceptedAt = null;
+      finishedAt = null;
+
+      // Reset timeline
+      timelineContainer.innerHTML = '<div id="timelineEmpty" class="timeline-empty">Waiting for events from customer\'s PC...</div>';
+      resultCard.classList.add("hidden");
+
+      // Show cards
+      cardCode.classList.remove("hidden");
+      cardLive.classList.remove("hidden");
+      codeDisplay.textContent = formatCode(code);
+      sessionQueryDisplay.textContent = `Query: ${queryText}`;
+
+      updateStatusBadge("waiting");
+      updateTimer();
+
+      // Clear existing intervals
+      if (pollInterval) clearInterval(pollInterval);
+      if (timerInterval) clearInterval(timerInterval);
+
+      // Start polling every 2s
+      pollSessionEvents();
+      pollInterval = setInterval(pollSessionEvents, 2000);
+      timerInterval = setInterval(updateTimer, 500);
+
+      // Refresh sidebar list
+      fetchRecentSessions();
+    }
+
+    // Load an existing session from sidebar
+    async function loadSession(code) {
+      try {
+        const res = await fetch(`${API_BASE}/sessions/${code}`);
+        if (!res.ok) return;
+        const details = await res.json();
+        startSessionTracking(code, details.query);
+      } catch (err) {
+        setServerError(true);
+      }
+    }
+
+    // Fetch recent sessions for sidebar (every 5s)
+    async function fetchRecentSessions() {
+      try {
+        const res = await fetch(`${API_BASE}/sessions`);
+        if (!res.ok) return;
+        setServerError(false);
+        const sessions = await res.json();
+
+        recentSessionsList.innerHTML = "";
+        if (sessions.length === 0) {
+          recentSessionsList.innerHTML = '<div style="color: #64748b; font-size: 13px; text-align: center; padding: 12px;">No sessions yet</div>';
+          return;
+        }
+
+        sessions.forEach(s => {
+          const item = document.createElement("div");
+          item.className = `recent-item ${s.code === currentCode ? "active" : ""}`;
+          item.onclick = () => loadSession(s.code);
+
+          let dotColor = "#94a3b8";
+          if (s.status === "running") dotColor = "#3b82f6";
+          else if (s.status === "solved") dotColor = "#22c55e";
+          else if (s.status === "escalated") dotColor = "#f97316";
+          else if (s.status === "stopped") dotColor = "#ef4444";
+
+          item.innerHTML = `
+            <div class="recent-item-header">
+              <span class="recent-code">${s.code}</span>
+              <span class="recent-dot" style="background-color: ${dotColor};"></span>
+            </div>
+            <div class="recent-query">${s.query || "No query"}</div>
+          `;
+          recentSessionsList.appendChild(item);
+        });
+      } catch (err) {
+        // Will be reflected by checkHealth
+      }
+    }
+
+    // Reset screen for new request
+    function resetScreen() {
+      if (pollInterval) clearInterval(pollInterval);
+      if (timerInterval) clearInterval(timerInterval);
+      pollInterval = null;
+      timerInterval = null;
+      currentCode = null;
+
+      cardCode.classList.add("hidden");
+      cardLive.classList.add("hidden");
+      queryInput.value = "";
+      queryInput.focus();
+
+      fetchRecentSessions();
+    }
+
+    // Setup prompt chips click handler
+    document.querySelectorAll(".chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        queryInput.value = chip.getAttribute("data-query");
+        queryInput.focus();
+      });
+    });
+
+    // Event Listeners
+    formNewSession.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const query = queryInput.value.trim();
+      const vendor_id = vendorSelect.value;
+      if (!query) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/sessions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query, vendor_id })
+        });
+        if (!res.ok) {
+          alert("Error creating session: " + res.statusText);
+          return;
+        }
+        const data = await res.json();
+        startSessionTracking(data.code, query);
+      } catch (err) {
+        setServerError(true);
+        alert("Failed to reach server. Please check your connection.");
+      }
+    });
+
+    // Ctrl+Enter to submit query
+    queryInput.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        formNewSession.dispatchEvent(new Event("submit"));
+      }
+    });
+
+    // Copy code button (copies 6 raw digits)
+    btnCopyCode.addEventListener("click", () => {
+      if (!currentCode) return;
+      navigator.clipboard.writeText(currentCode).then(() => {
+        copyText.textContent = "Copied! ✓";
+        setTimeout(() => { copyText.textContent = "Copy"; }, 2000);
+      }).catch(() => {
+        // Fallback copy
+        const temp = document.createElement("textarea");
+        temp.value = currentCode;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        copyText.textContent = "Copied! ✓";
+        setTimeout(() => { copyText.textContent = "Copy"; }, 2000);
+      });
+    });
+
+    btnNewRequestSidebar.addEventListener("click", resetScreen);
+
+    // Initial setup & periodic timers
+    checkHealth();
+    fetchRecentSessions();
+    setInterval(checkHealth, 5000);
+    setInterval(fetchRecentSessions, 5000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+google-genai>=2.7.0
+mss
+pyautogui
+pillow
+python-dotenv
+keyboard
+requests
+fastapi
+uvicorn
+websockets

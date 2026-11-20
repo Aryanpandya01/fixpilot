@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FixPilot System Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout idea: one long explainer column, each section = one idea + one picture. Signal orange marks "the AI is acting". */
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --ink: #14202e;
+  --muted: #5b6878;
+  --line: #d6dde6;
+  --accent: #d9480f;
+  --accent-soft: #fde7dc;
+  --good: #15803d;
+  --good-soft: #dcf3e3;
+  --warn: #b45309;
+  --stop: #b91c1c;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e141c; --surface: #16202b; --ink: #e6edf5; --muted: #9aa8b8; --line: #2b3a4a;
+    --accent: #ff8a4c; --accent-soft: #3a2116; --good: #4ade80; --good-soft: #13301f;
+    --warn: #fbbf24; --stop: #f87171; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e141c; --surface: #16202b; --ink: #e6edf5; --muted: #9aa8b8; --line: #2b3a4a;
+  --accent: #ff8a4c; --accent-soft: #3a2116; --good: #4ade80; --good-soft: #13301f;
+  --warn: #fbbf24; --stop: #f87171; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 var(--body); }
+main { max-width: 1080px; margin: 0 auto; padding: 48px 20px 80px; display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 800; }
+h3 { font-size: 1.15rem; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+.kicker { font: 500 0.85rem var(--mono); color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; }
+section { display: grid; gap: 20px; }
+.hero { display: grid; gap: 18px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.hero .lead { font-size: 1.3rem; max-width: 60ch; }
+.hero em { font-style: normal; color: var(--accent); font-weight: 600; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 10px; align-content: start; }
+.card.hot { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.card ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+.tag { display: inline-block; font: 500 0.78rem var(--mono); padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); justify-self: start; }
+.tag.good { background: var(--good-soft); color: var(--good); }
+code, .mono { font-family: var(--mono); font-size: 0.9em; }
+figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; }
+figure .scroll { overflow-x: auto; }
+figure svg { width: 100%; min-width: 640px; height: auto; display: block; color: var(--ink); font-family: var(--body); }
+figcaption { color: var(--muted); font-size: 0.95rem; }
+/* SVG classes (styled from page CSS) */
+.b { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.b-strong { fill: var(--surface); stroke: currentColor; stroke-width: 1.5; }
+.b-accent { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+.b-good { fill: var(--good-soft); stroke: var(--good); stroke-width: 2; }
+.zone { fill: none; stroke: var(--line); stroke-width: 2; stroke-dasharray: 6 6; }
+.t { fill: currentColor; font-size: 14px; }
+.t-s { fill: var(--muted); font-size: 12px; }
+.t-b { fill: currentColor; font-size: 15px; font-weight: 600; }
+.t-zone { fill: var(--muted); font-size: 13px; font-family: var(--mono); }
+.t-acc { fill: var(--accent); font-size: 13px; font-weight: 600; }
+.t-good { fill: var(--good); font-size: 13px; font-weight: 600; }
+.t-stop { fill: var(--stop); font-size: 13px; font-weight: 600; }
+.ln { stroke: currentColor; stroke-width: 1.6; fill: none; }
+.ln-acc { stroke: var(--accent); stroke-width: 2.2; fill: none; }
+.ln-mut { stroke: var(--muted); stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; }
+.ah { fill: currentColor; }
+.ah-acc { fill: var(--accent); }
+.ah-mut { fill: var(--muted); }
+/* Steps */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; counter-reset: s; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 6px; align-content: start; position: relative; }
+.step::before { counter-increment: s; content: counter(s); font: 800 1.6rem var(--display); color: var(--accent); }
+.step .who { font: 500 0.78rem var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.step.done { border-color: var(--good); }
+.step.done::before { color: var(--good); }
+/* Timeline */
+.timeline { display: flex; gap: 4px; min-width: 760px; }
+.seg { border-radius: 8px; padding: 10px 10px 12px; background: var(--surface); border: 1px solid var(--line); display: grid; gap: 4px; align-content: start; font-size: 0.85rem; }
+.seg b { font-family: var(--display); font-size: 0.95rem; }
+.seg .hr { font: 500 0.75rem var(--mono); color: var(--muted); }
+.seg.cp { background: var(--accent-soft); border-color: var(--accent); }
+.seg.cp b { color: var(--accent); }
+.seg.buf { border-style: dashed; }
+.tl-wrap { overflow-x: auto; padding-bottom: 4px; }
+/* Team */
+.team { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: stretch; }
+.contract { display: grid; place-items: center; text-align: center; padding: 16px; border: 2px dashed var(--accent); border-radius: 12px; color: var(--accent); font: 600 0.95rem var(--display); max-width: 180px; }
+.contract span { display: block; font: 400 0.8rem var(--body); color: var(--muted); margin-top: 6px; }
+@media (max-width: 760px) { .team { grid-template-columns: 1fr; } .contract { max-width: none; } }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 500 0.85rem var(--mono); padding: 6px 12px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); }
+.chip.g { border-color: var(--accent); color: var(--accent); }
+.vs { font: 800 1rem var(--display); color: var(--muted); }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--display); font-size: 0.95rem; }
+.tbl { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+footer { color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line); padding-top: 20px; }
+</style>
+</head>
+<body>
+<main>
+
+<header class="hero">
+  <div class="kicker">Startup Buildathon India 2026 · Built with Gemini</div>
+  <h1>FixPilot: AnyDesk, but the AI fixes it</h1>
+  <p class="lead">The customer describes the problem. FixPilot <em>looks at their screen</em>, finds the right buttons, and <em>fixes it or shows them how</em>. No human support agent, no waiting.</p>
+</header>
+
+<!-- 1. Problem vs solution -->
+<section>
+  <div class="kicker">01 · The problem</div>
+  <h2>Today a human fixes every issue by hand</h2>
+  <p class="muted">Software vendors answer the same questions all day: "where is this menu", "how do I add a product", "my icon is missing". Every one ends with an AnyDesk session.</p>
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 960 250" role="img" aria-label="Today: customer waits hours for a human over AnyDesk. With FixPilot: the AI fixes it in about a minute.">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+        <marker id="a1o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-acc"/></marker>
+      </defs>
+      <text x="20" y="34" class="t-zone">TODAY</text>
+      <rect x="20" y="48" width="150" height="56" rx="10" class="b-strong"/><text x="95" y="81" text-anchor="middle" class="t-b">Customer</text>
+      <line x1="170" y1="76" x2="290" y2="76" class="ln" marker-end="url(#a1)"/><text x="230" y="66" text-anchor="middle" class="t-s">calls support</text>
+      <rect x="290" y="48" width="170" height="56" rx="10" class="b"/><text x="375" y="73" text-anchor="middle" class="t-b">Waits in queue</text><text x="375" y="92" text-anchor="middle" class="t-stop">2–3 hours</text>
+      <line x1="460" y1="76" x2="560" y2="76" class="ln" marker-end="url(#a1)"/>
+      <rect x="560" y="48" width="170" height="56" rx="10" class="b"/><text x="645" y="73" text-anchor="middle" class="t-b">Human agent</text><text x="645" y="92" text-anchor="middle" class="t-s">connects on AnyDesk</text>
+      <line x1="730" y1="76" x2="820" y2="76" class="ln" marker-end="url(#a1)"/><text x="775" y="66" text-anchor="middle" class="t-s">clicks</text>
+      <rect x="820" y="48" width="120" height="56" rx="10" class="b"/><text x="880" y="81" text-anchor="middle" class="t-b">Fixed</text>
+
+      <text x="20" y="160" class="t-zone" style="fill:var(--accent)">WITH FIXPILOT</text>
+      <rect x="20" y="174" width="150" height="56" rx="10" class="b-strong"/><text x="95" y="207" text-anchor="middle" class="t-b">Customer</text>
+      <line x1="170" y1="202" x2="370" y2="202" class="ln-acc" marker-end="url(#a1o)"/><text x="270" y="192" text-anchor="middle" class="t-acc">types or speaks the issue</text>
+      <rect x="370" y="174" width="360" height="56" rx="10" class="b-accent"/><text x="550" y="199" text-anchor="middle" class="t-b">FixPilot AI</text><text x="550" y="218" text-anchor="middle" class="t-s">sees the screen · clicks · teaches</text>
+      <line x1="730" y1="202" x2="820" y2="202" class="ln-acc" marker-end="url(#a1o)"/>
+      <rect x="820" y="174" width="120" height="56" rx="10" class="b-good"/><text x="880" y="199" text-anchor="middle" class="t-b">Fixed</text><text x="880" y="218" text-anchor="middle" class="t-good">~1 minute</text>
+    </svg>
+    </div>
+    <figcaption>The human in the middle is replaced by an AI that knows the software and acts on the real screen.</figcaption>
+  </figure>
+</section>
+
+<!-- 2. Two modes -->
+<section>
+  <div class="kicker">02 · Two ways to use it</div>
+  <h2>One app, two modes</h2>
+  <div class="grid2">
+    <div class="card">
+      <span class="tag">Mode 1 · Personal help</span>
+      <h3>Anyone with a Windows PC</h3>
+      <p>"My WiFi and Bluetooth icons are gone." "How do I make a new folder?"</p>
+      <ul>
+        <li>Type or speak the problem</li>
+        <li>Watch FixPilot fix it on your screen</li>
+        <li>Uses Gemini's general Windows knowledge</li>
+      </ul>
+      <p class="muted">Free. This is how people discover FixPilot.</p>
+    </div>
+    <div class="card hot">
+      <span class="tag">Mode 2 · Business support</span>
+      <h3>Customers of a software company</h3>
+      <p>A billing software customer asks support: "How do I add a new product with 18% GST?"</p>
+      <ul>
+        <li>Support creates a 6-digit FixPilot code</li>
+        <li>Customer enters the code and clicks Accept</li>
+        <li>AI solves it using that vendor's knowledge base</li>
+      </ul>
+      <p class="muted">Paid by the vendor. This is the business.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Mode 2 flow -->
+<section>
+  <div class="kicker">03 · How a support request works</div>
+  <h2>Code, accept, fixed: like AnyDesk, without the human</h2>
+  <div class="steps">
+    <div class="step"><span class="who">Customer → support</span><h3>Asks a question</h3><p class="muted">"How do I add Parle-G at ₹10 with 18% GST?"</p></div>
+    <div class="step"><span class="who">Support desk</span><h3>Gets a code</h3><p class="muted">Types the query into the dashboard and gets <span class="mono">482 913</span>.</p></div>
+    <div class="step"><span class="who">Customer</span><h3>Enters code, clicks Accept</h3><p class="muted">Consent first. Nothing happens without it.</p></div>
+    <div class="step"><span class="who">FixPilot AI</span><h3>Sees and acts</h3><p class="muted">Screenshot → Gemini → click → check, step by step, inside the billing software.</p></div>
+    <div class="step done"><span class="who">Both</span><h3>Solved and taught</h3><p class="muted">Dashboard shows "Solved in 0:48". Customer sees "Next time: Products → Add → Save".</p></div>
+  </div>
+</section>
+
+<!-- 4. Architecture -->
+<section>
+  <div class="kicker">04 · System design</div>
+  <h2>What runs where</h2>
+  <p class="muted">The AI runs on the customer's own PC, so there is no screen streaming. Only screenshots go to Gemini, and only step updates go to the support desk.</p>
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 1000 700" role="img" aria-label="Architecture: the customer laptop runs the billing software, the FixPilot panel and the agent; the support laptop runs the dashboard and session server; the agent talks to Gemini.">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+        <marker id="a2o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-acc"/></marker>
+        <marker id="a2m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-mut"/></marker>
+      </defs>
+
+      <!-- Laptop A -->
+      <rect x="20" y="20" width="440" height="500" rx="16" class="zone"/>
+      <text x="40" y="48" class="t-zone">LAPTOP A · CUSTOMER PC · Person A</text>
+      <rect x="40" y="70" width="190" height="120" rx="10" class="b-strong"/>
+      <text x="135" y="112" text-anchor="middle" class="t-b">Billing software</text>
+      <text x="135" y="134" text-anchor="middle" class="t-s">the real Windows app</text>
+      <text x="135" y="152" text-anchor="middle" class="t-s">with dummy data</text>
+      <rect x="250" y="70" width="190" height="120" rx="10" class="b-strong"/>
+      <text x="345" y="104" text-anchor="middle" class="t-b">FixPilot panel</text>
+      <text x="345" y="126" text-anchor="middle" class="t-s">query + mic</text>
+      <text x="345" y="144" text-anchor="middle" class="t-s">Accept / Approve</text>
+      <text x="345" y="162" text-anchor="middle" class="t-stop">STOP button</text>
+
+      <rect x="40" y="260" width="400" height="236" rx="12" class="b-accent"/>
+      <text x="60" y="290" class="t-b">FixPilot agent (Python)</text>
+      <rect x="60" y="306" width="175" height="54" rx="8" class="b"/><text x="147" y="330" text-anchor="middle" class="t">screen.py</text><text x="147" y="348" text-anchor="middle" class="t-s">takes screenshots</text>
+      <rect x="245" y="306" width="175" height="54" rx="8" class="b"/><text x="332" y="330" text-anchor="middle" class="t">executor.py</text><text x="332" y="348" text-anchor="middle" class="t-s">mouse + keyboard</text>
+      <rect x="60" y="370" width="175" height="54" rx="8" class="b"/><text x="147" y="394" text-anchor="middle" class="t">agent.py</text><text x="147" y="412" text-anchor="middle" class="t-s">the AI loop + modes</text>
+      <rect x="245" y="370" width="175" height="54" rx="8" class="b"/><text x="332" y="394" text-anchor="middle" class="t">prompts.py</text><text x="332" y="412" text-anchor="middle" class="t-s">rules + safety</text>
+      <rect x="60" y="434" width="175" height="48" rx="8" class="b"/><text x="147" y="463" text-anchor="middle" class="t">overlay.py · guide</text>
+      <rect x="245" y="434" width="175" height="48" rx="8" class="b"/><text x="332" y="463" text-anchor="middle" class="t">logs/ · audit trail</text>
+
+      <!-- A internal arrows -->
+      <line x1="135" y1="258" x2="135" y2="194" class="ln-acc" marker-end="url(#a2o)"/>
+      <text x="125" y="232" text-anchor="end" class="t-acc">clicks, types</text>
+      <line x1="345" y1="194" x2="345" y2="256" class="ln" marker-start="url(#a2)" marker-end="url(#a2)"/>
+      <text x="355" y="232" class="t-s">WebSocket</text>
+
+      <!-- Laptop B -->
+      <rect x="560" y="20" width="420" height="500" rx="16" class="zone"/>
+      <text x="580" y="48" class="t-zone">LAPTOP B · SUPPORT DESK · Person B</text>
+      <rect x="580" y="70" width="380" height="120" rx="10" class="b-strong"/>
+      <text x="770" y="106" text-anchor="middle" class="t-b">Support dashboard</text>
+      <text x="770" y="130" text-anchor="middle" class="t-s">type query → big 6-digit code</text>
+      <text x="770" y="150" text-anchor="middle" class="t-s">live timeline of AI steps</text>
+      <text x="770" y="172" text-anchor="middle" class="t-good">Solved in 0:48</text>
+      <rect x="580" y="260" width="380" height="120" rx="10" class="b-strong"/>
+      <text x="770" y="296" text-anchor="middle" class="t-b">Session server (FastAPI)</text>
+      <text x="770" y="320" text-anchor="middle" class="t-s">codes · accept · events · finish</text>
+      <text x="770" y="340" text-anchor="middle" class="t-s">port 9000, in-memory</text>
+      <rect x="680" y="430" width="180" height="60" rx="10" class="b"/>
+      <text x="770" y="456" text-anchor="middle" class="t">kb/billing_app.md</text>
+      <text x="770" y="474" text-anchor="middle" class="t-s">vendor knowledge</text>
+      <line x1="770" y1="194" x2="770" y2="256" class="ln" marker-start="url(#a2)" marker-end="url(#a2)"/>
+      <text x="780" y="230" class="t-s">polls every 2s</text>
+      <line x1="770" y1="384" x2="770" y2="426" class="ln" marker-start="url(#a2)"/>
+      <text x="780" y="410" class="t-s">reads</text>
+
+      <!-- A <-> B -->
+      <line x1="576" y1="300" x2="444" y2="300" class="ln" marker-end="url(#a2)"/>
+      <text x="509" y="290" text-anchor="middle" class="t-s">← query + kb (by code)</text>
+      <line x1="576" y1="340" x2="442" y2="340" class="ln" marker-start="url(#a2)"/>
+      <text x="509" y="362" text-anchor="middle" class="t-s">each AI step →</text>
+
+      <!-- Gemini -->
+      <rect x="300" y="590" width="400" height="90" rx="14" class="b-accent"/>
+      <text x="500" y="624" text-anchor="middle" class="t-b">Gemini API · Computer Use (desktop)</text>
+      <text x="500" y="648" text-anchor="middle" class="t-s">gemini-3.8-flash · fallback gemini-4-argon</text>
+      <text x="500" y="666" text-anchor="middle" class="t-s">Google Cloud</text>
+      <path d="M200 498 L200 560 L360 560 L360 586" class="ln-acc" marker-end="url(#a2o)"/>
+      <text x="210" y="552" class="t-acc">screenshot + question</text>
+      <line x1="400" y1="588" x2="400" y2="500" class="ln" marker-end="url(#a2)"/>
+      <text x="410" y="552" class="t-s">next action</text>
+    </svg>
+    </div>
+    <figcaption>Laptop A acts on the screen and Laptop B watches. Gemini is the brain, and it only ever sees screenshots and the question.</figcaption>
+  </figure>
+</section>
+
+<!-- 5. Agent loop -->
+<section>
+  <div class="kicker">05 · The heart of the system</div>
+  <h2>The AI loop: look, decide, check, act, repeat</h2>
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 960 430" role="img" aria-label="Agent loop: take screenshot, Gemini decides, trust check, execute, then repeat. Exits: solved, hand to human, or stopped.">
+      <defs>
+        <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+        <marker id="a3o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-acc"/></marker>
+      </defs>
+      <!-- nodes in a cycle -->
+      <rect x="230" y="30" width="200" height="66" rx="12" class="b-strong"/>
+      <text x="330" y="58" text-anchor="middle" class="t-b">1 · Look</text><text x="330" y="80" text-anchor="middle" class="t-s">take a screenshot</text>
+
+      <rect x="470" y="170" width="220" height="74" rx="12" class="b-accent"/>
+      <text x="580" y="200" text-anchor="middle" class="t-b">2 · Decide</text><text x="580" y="222" text-anchor="middle" class="t-s">Gemini picks the next click</text>
+
+      <rect x="230" y="330" width="200" height="74" rx="12" class="b-strong"/>
+      <text x="330" y="358" text-anchor="middle" class="t-b">3 · Check</text><text x="330" y="380" text-anchor="middle" class="t-s">trust mode · approval</text>
+
+      <rect x="20" y="170" width="190" height="74" rx="12" class="b-strong"/>
+      <text x="115" y="200" text-anchor="middle" class="t-b">4 · Act</text><text x="115" y="222" text-anchor="middle" class="t-s">click / type on screen</text>
+
+      <path d="M432 63 Q560 70 575 166" class="ln" marker-end="url(#a3)"/>
+      <path d="M575 248 Q560 360 434 366" class="ln" marker-end="url(#a3)"/>
+      <path d="M228 366 Q110 360 112 248" class="ln" marker-end="url(#a3)"/>
+      <path d="M112 166 Q110 70 226 63" class="ln" marker-end="url(#a3)"/>
+      <text x="96" y="110" text-anchor="middle" class="t-s">wait 0.8s</text>
+
+      <!-- exits -->
+      <line x1="692" y1="190" x2="776" y2="110" class="ln-acc" marker-end="url(#a3o)"/>
+      <rect x="780" y="76" width="160" height="58" rx="10" class="b-good"/>
+      <text x="860" y="101" text-anchor="middle" class="t-b">Solved</text><text x="860" y="121" text-anchor="middle" class="t-s">summary + "next time"</text>
+
+      <line x1="692" y1="207" x2="776" y2="207" class="ln-acc" marker-end="url(#a3o)"/>
+      <rect x="780" y="178" width="160" height="58" rx="10" class="b"/>
+      <text x="860" y="203" text-anchor="middle" class="t-b">Hand to human</text><text x="860" y="223" text-anchor="middle" class="t-s">not sure → ticket</text>
+
+      <line x1="692" y1="226" x2="776" y2="300" class="ln-acc" marker-end="url(#a3o)"/>
+      <rect x="780" y="280" width="160" height="58" rx="10" class="b"/>
+      <text x="860" y="305" text-anchor="middle" class="t-b" style="fill:var(--stop)">Stopped</text><text x="860" y="325" text-anchor="middle" class="t-s">STOP button / denied</text>
+    </svg>
+    </div>
+    <figcaption>Each turn is one screenshot and one action. The loop ends when Gemini reports the fix is done, hands off to a human, or the customer presses STOP.</figcaption>
+  </figure>
+</section>
+
+<!-- 6. Trust + safety -->
+<section>
+  <div class="kicker">06 · Trust</div>
+  <h2>The customer chooses how much the AI does</h2>
+  <div class="grid3">
+    <div class="card"><span class="tag good">Guide</span><h3>AI points, you click</h3><p class="muted">A glowing circle on the right button: "Click Products here". Best for learning.</p></div>
+    <div class="card"><span class="tag">Assist</span><h3>AI clicks after you approve</h3><p class="muted">Every step shows Approve / Deny first.</p></div>
+    <div class="card"><span class="tag">Auto</span><h3>AI fixes it alone</h3><p class="muted">Only for safe, known fixes the vendor allows.</p></div>
+  </div>
+  <div class="card">
+    <h3>Safety built in</h3>
+    <div class="chips">
+      <span class="chip">Code + Accept before anything</span>
+      <span class="chip">STOP button + Ctrl+Shift+X</span>
+      <span class="chip">Gemini safety checks on risky steps</span>
+      <span class="chip">No deleting, no passwords, no payments</span>
+      <span class="chip">Prompt-injection detection</span>
+      <span class="chip">Every step logged</span>
+      <span class="chip">Unsure → human support</span>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Team split -->
+<section>
+  <div class="kicker">07 · Team</div>
+  <h2>Two builders, one contract</h2>
+  <p class="muted">Each person owns separate folders. The only link between the two halves is the API in CONTRACT.md, so merging is just a git pull.</p>
+  <div class="team">
+    <div class="card">
+      <span class="tag">Person A · Agent</span>
+      <h3>The customer PC side</h3>
+      <ul>
+        <li>Screen capture + mouse/keyboard</li>
+        <li>Gemini AI loop and trust modes</li>
+        <li>FixPilot panel, Accept popup, STOP</li>
+        <li>Guide-mode highlight</li>
+      </ul>
+      <p class="mono muted">agent/ · app/</p>
+    </div>
+    <div class="contract">CONTRACT.md<span>API paths, event format, engine function. Frozen.</span></div>
+    <div class="card">
+      <span class="tag">Person B · Cloud</span>
+      <h3>The support side</h3>
+      <ul>
+        <li>Session server: codes + live events</li>
+        <li>Support dashboard</li>
+        <li>Knowledge file for the billing software</li>
+        <li>Pitch slides + backup video</li>
+      </ul>
+      <p class="mono muted">server/ · dashboard/ · kb/ · pitch/</p>
+    </div>
+  </div>
+</section>
+
+<!-- 8. Timeline -->
+<section>
+  <div class="kicker">08 · The plan</div>
+  <h2>8 hours, two checkpoints</h2>
+  <div class="tl-wrap">
+    <div class="timeline">
+      <div class="seg" style="flex:0.6"><span class="hr">0:00</span><b>Setup</b>repo, API key, install billing app</div>
+      <div class="seg" style="flex:2.5"><span class="hr">0:30</span><b>Build in parallel</b>A: AI engine, Mode 1 works<br>B: server, dashboard, knowledge file</div>
+      <div class="seg cp" style="flex:0.9"><span class="hr">3:00</span><b>Checkpoint 1</b>AI adds a product in the real app</div>
+      <div class="seg" style="flex:2"><span class="hr">3:00</span><b>Connect</b>A: panel, Mode 2, guide overlay<br>B: fix kb, polish, slides</div>
+      <div class="seg cp" style="flex:0.9"><span class="hr">5:00</span><b>Checkpoint 2</b>Merge, full flow on 2 laptops</div>
+      <div class="seg" style="flex:1.5"><span class="hr">5:00</span><b>Polish</b>speed, Hinglish, slides, backup video</div>
+      <div class="seg" style="flex:1"><span class="hr">6:30</span><b>Rehearse</b>demo × 5</div>
+      <div class="seg buf" style="flex:0.5"><span class="hr">7:30</span><b>Buffer</b></div>
+    </div>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Stage demo</th><th>What the judges see</th><th>Time</th></tr></thead>
+      <tbody>
+        <tr><td>Mode 1</td><td>"Show WiFi and Bluetooth icons" → FixPilot opens Settings and fixes it</td><td>~30s</td></tr>
+        <tr><td>Mode 2</td><td>Support types the query → code → customer accepts → product added in the billing app → dashboard shows Solved</td><td>~60s</td></tr>
+        <tr><td>Safety</td><td>Assist mode asks before each click, then STOP halts it mid-task</td><td>~20s</td></tr>
+        <tr><td>Hand-off</td><td>"My license expired" → AI refuses to guess, hands off to human support</td><td>~15s</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 9. Stack + future -->
+<section>
+  <div class="kicker">09 · Technology</div>
+  <h2>Built today, and where it goes next</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Today's MVP</h3>
+      <div class="chips">
+        <span class="chip g">Gemini Computer Use</span><span class="chip g">gemini-3.8-flash</span><span class="chip g">gemini-4-argon</span>
+        <span class="chip">Python</span><span class="chip">mss</span><span class="chip">pyautogui</span><span class="chip">FastAPI</span><span class="chip">HTML + JS</span><span class="chip">Web Speech (Hindi)</span><span class="chip g">Antigravity</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Production (roadmap)</h3>
+      <div class="chips">
+        <span class="chip g">Cloud Run</span><span class="chip g">Firestore</span><span class="chip g">Vertex AI Vector Search</span><span class="chip g">Gemini Embedding</span><span class="chip g">Firebase Auth</span><span class="chip">RustDesk for live human takeover</span><span class="chip">Shipped inside the vendor's app</span><span class="chip">AI explores a new app by itself</span>
+      </div>
+    </div>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th>Acts on the screen</th><th>Knows the product</th><th>Fixes with no human</th></tr></thead>
+      <tbody>
+        <tr><td>AnyDesk, TeamViewer</td><td>Yes, by a human</td><td>No</td><td>No</td></tr>
+        <tr><td>ChatGPT, chatbots</td><td>No</td><td>Partly</td><td>Text answers only</td></tr>
+        <tr><td>WalkMe, Whatfix</td><td>Web apps, manual tours</td><td>Yes, after setup</td><td>No</td></tr>
+        <tr><td><b>FixPilot</b></td><td><b>Yes, by AI, on desktop apps</b></td><td><b>Yes</b></td><td><b>Yes, with consent</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>FixPilot · free for individuals, ₹4,999 / ₹14,999 per month for software vendors, priced per fix.</footer>
+</main>
+</body>
+</html>

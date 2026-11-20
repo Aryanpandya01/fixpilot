@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FixPilot</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23ff6a2b'/%3E%3Cpath d='M6 4l12 7-5.5 1.6L10 18.5z' fill='%231b0c03'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Night cockpit: deep ink surfaces, one hot "pilot orange" for anything the AI does, green only for success. */
+  --bg: #0b1119;
+  --bg2: #0f1823;
+  --card: #141f2c;
+  --card-hi: #1a2838;
+  --line: #243447;
+  --line-hi: #33475e;
+  --ink: #edf2f8;
+  --muted: #8d9db0;
+  --dim: #5f7085;
+  --accent: #ff6a2b;
+  --accent-2: #ff9a3d;
+  --accent-soft: rgba(255, 106, 43, 0.13);
+  --good: #34d98a;
+  --good-soft: rgba(52, 217, 138, 0.13);
+  --warn: #ffb547;
+  --warn-soft: rgba(255, 181, 71, 0.13);
+  --stop: #ff4d5e;
+  --blue: #5cb2ff;
+  --blue-soft: rgba(92, 178, 255, 0.12);
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --ui: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", Consolas, monospace;
+  --r: 14px;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: radial-gradient(120% 60% at 100% 0%, #16233a 0%, transparent 60%), var(--bg);
+  color: var(--ink); font: 500 15px/1.5 var(--ui); display: flex; flex-direction: column; overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- Header ---------- */
+header { padding: 14px 16px 12px; display: flex; align-items: center; gap: 10px; position: relative; }
+.mark { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 6px 18px rgba(255,106,43,.35); }
+.mark svg { width: 18px; height: 18px; }
+.logo { font: 800 20px/1 var(--display); letter-spacing: -0.02em; }
+.logo span { color: var(--accent); }
+.pill { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; font: 700 12px/1 var(--ui);
+  padding: 7px 11px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+  transition: all .3s var(--ease); }
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.ready { color: var(--good); }
+.pill.working { color: var(--accent); border-color: rgba(255,106,43,.4); background: var(--accent-soft); }
+.pill.working .dot { animation: ping 1.2s infinite; }
+.pill.good { color: var(--good); border-color: rgba(52,217,138,.4); background: var(--good-soft); }
+.pill.warn { color: var(--warn); border-color: rgba(255,181,71,.4); background: var(--warn-soft); }
+.pill.off { color: var(--stop); }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(255,106,43,.7); } 100% { box-shadow: 0 0 0 8px rgba(255,106,43,0); } }
+.progress { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--line); overflow: hidden; }
+.progress i { position: absolute; inset: 0; width: 40%; background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  transform: translateX(-100%); opacity: 0; }
+body.running .progress i { opacity: 1; animation: sweep 1.4s var(--ease) infinite; }
+@keyframes sweep { to { transform: translateX(260%); } }
+
+/* ---------- Layout ---------- */
+main { flex: 1; overflow-y: auto; padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; }
+main::-webkit-scrollbar { width: 8px; } main::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
+.view { display: flex; flex-direction: column; gap: 14px; animation: rise .35s var(--ease); }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+.hidden { display: none !important; }
+h1 { font: 800 24px/1.15 var(--display); letter-spacing: -0.02em; margin: 2px 0 0; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--accent); }
+.sub { color: var(--muted); font-size: 14px; margin: -6px 0 0; }
+.label { font: 700 11px/1 var(--ui); color: var(--dim); text-transform: uppercase; letter-spacing: .09em; }
+
+/* Tabs with sliding indicator */
+.tabs { position: relative; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); background: var(--bg2);
+  border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.tabs .ind { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: 9px;
+  background: var(--card-hi); border: 1px solid var(--line-hi); transition: transform .35s var(--ease); }
+.tabs.second .ind { transform: translateX(100%); }
+.tabs button { position: relative; z-index: 1; border: 0; background: none; padding: 9px 6px; border-radius: 9px;
+  font-weight: 700; font-size: 14px; color: var(--muted); cursor: pointer; transition: color .2s; display: flex; gap: 7px; align-items: center; justify-content: center; }
+.tabs button.on { color: var(--ink); }
+
+/* Composer */
+.composer { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 4px; transition: border-color .2s, box-shadow .2s; }
+.composer:focus-within { border-color: rgba(255,106,43,.55); box-shadow: 0 0 0 4px var(--accent-soft); }
+textarea { width: 100%; background: transparent; border: 0; color: var(--ink); resize: none; padding: 10px 12px 4px;
+  font: 600 16px/1.45 var(--ui); min-height: 76px; outline: none; }
+textarea::placeholder { color: var(--dim); }
+.composer .bar { display: flex; align-items: center; gap: 6px; padding: 4px 6px 6px; }
+.icon-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg2); display: grid; place-items: center;
+  cursor: pointer; transition: all .2s var(--ease); color: var(--muted); }
+.icon-btn:hover { color: var(--ink); border-color: var(--line-hi); transform: translateY(-1px); }
+.icon-btn svg { width: 18px; height: 18px; }
+.icon-btn.rec { background: var(--stop); border-color: var(--stop); color: white; animation: recpulse 1s infinite; }
+@keyframes recpulse { 50% { box-shadow: 0 0 0 6px rgba(255,77,94,.25); } }
+.chip-lang { height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg2); font: 700 12px var(--mono);
+  color: var(--muted); cursor: pointer; }
+.chars { margin-left: auto; font: 500 11px var(--mono); color: var(--dim); }
+
+.examples { display: flex; flex-wrap: wrap; gap: 6px; }
+.ex { border: 1px dashed var(--line-hi); background: transparent; color: var(--muted); padding: 6px 10px; border-radius: 999px; font-size: 12.5px;
+  font-weight: 600; cursor: pointer; transition: all .2s var(--ease); }
+.ex:hover { color: var(--ink); border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
+
+/* Mode cards */
+.modes { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.mode { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 11px 8px 10px; cursor: pointer; text-align: left;
+  display: flex; flex-direction: column; gap: 6px; transition: all .25s var(--ease); position: relative; }
+.mode:hover { border-color: var(--line-hi); transform: translateY(-2px); }
+.mode .ico { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--bg2); color: var(--muted); transition: all .25s; }
+.mode .ico svg { width: 16px; height: 16px; }
+.mode b { font-size: 13.5px; line-height: 1.2; }
+.mode small { color: var(--dim); font-size: 11.5px; line-height: 1.3; }
+.mode.on { border-color: var(--accent); background: linear-gradient(180deg, var(--accent-soft), transparent 80%); }
+.mode.on .ico { background: var(--accent); color: #1b0c03; }
+.mode.on::after { content: ""; position: absolute; top: 9px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* Buttons */
+.btn { position: relative; border: 0; border-radius: 12px; padding: 14px 16px; font: 800 15.5px/1 var(--ui); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px; transition: transform .15s var(--ease), box-shadow .25s, filter .2s; }
+.btn svg { width: 18px; height: 18px; }
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.btn.primary { width: 100%; color: #1b0c03; background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 8px 22px rgba(255,106,43,.32), inset 0 1px 0 rgba(255,255,255,.35); overflow: hidden; }
+.btn.primary:hover { box-shadow: 0 10px 28px rgba(255,106,43,.45), inset 0 1px 0 rgba(255,255,255,.35); filter: brightness(1.05); }
+.btn.primary::before { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%);
+  transform: translateX(-120%); transition: transform .7s var(--ease); }
+.btn.primary:hover::before { transform: translateX(120%); }
+.btn.good { flex: 1; color: #04210f; background: var(--good); box-shadow: 0 6px 18px rgba(52,217,138,.28); }
+.btn.ghost { flex: 1; background: var(--card-hi); border: 1px solid var(--line-hi); }
+.btn.ghost:hover { border-color: var(--muted); }
+.kbd { font: 700 10.5px var(--mono); padding: 2px 5px; border-radius: 5px; background: rgba(0,0,0,.18); opacity: .8; }
+
+/* Code boxes (OTP style) */
+.otp { display: grid; grid-template-columns: repeat(3, 1fr) 14px repeat(3, 1fr); gap: 6px; align-items: center; }
+.otp input { width: 100%; height: 58px; text-align: center; font: 700 26px var(--mono); color: var(--ink); background: var(--card);
+  border: 1px solid var(--line); border-radius: 12px; outline: none; transition: all .2s var(--ease); caret-color: var(--accent); }
+.otp input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); transform: translateY(-1px); }
+.otp input.filled { border-color: var(--line-hi); background: var(--card-hi); }
+.otp .dash { height: 2px; background: var(--line-hi); border-radius: 2px; }
+.otp.shake { animation: shake .4s; }
+@keyframes shake { 25% { transform: translateX(-6px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-3px); } }
+.note { display: flex; gap: 10px; align-items: flex-start; color: var(--muted); font-size: 13px; background: var(--bg2); border: 1px solid var(--line);
+  border-radius: 12px; padding: 11px 12px; }
+.note svg { width: 18px; height: 18px; flex: none; color: var(--blue); margin-top: 1px; }
+
+/* Cards */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.offer { border-color: rgba(92,178,255,.45); background: linear-gradient(180deg, var(--blue-soft), var(--card) 70%); animation: rise .35s var(--ease); }
+.offer .who { display: flex; align-items: center; gap: 10px; }
+.avatar { width: 36px; height: 36px; border-radius: 10px; background: var(--blue); color: #04182b; display: grid; place-items: center; font: 800 15px var(--display); }
+.offer .who b { display: block; font-size: 15px; } .offer .who small { color: var(--muted); font-size: 12.5px; }
+.quote { font: 700 17px/1.4 var(--ui); padding: 12px 14px; border-radius: 12px; background: var(--bg2); border-left: 3px solid var(--blue); }
+.row { display: flex; gap: 8px; }
+/* Compact trust-mode switch on the Accept card: the customer picks how much control to give at the moment of consent */
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 4px; background: var(--bg2); border: 1px solid var(--line); border-radius: 11px; padding: 4px; }
+.seg button { border: 1px solid transparent; background: none; border-radius: 8px; padding: 8px 4px; font: 700 13px/1.2 var(--ui); color: var(--muted); cursor: pointer; transition: all .2s var(--ease); }
+.seg button:hover { color: var(--ink); }
+.seg button.on { color: var(--ink); background: var(--card-hi); border-color: var(--accent); }
+.seg-help { font-size: 12.5px; color: var(--dim); margin-top: -4px; }
+
+/* Now (current step) */
+.now { border-color: rgba(255,106,43,.45); background: linear-gradient(180deg, var(--accent-soft), var(--card) 75%); }
+.now-top { display: flex; align-items: center; gap: 8px; }
+.spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,106,43,.25); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.now-text { font: 700 18px/1.35 var(--ui); }
+.now .query { color: var(--muted); font-size: 13px; }
+.stepno { margin-left: auto; font: 700 11px/1 var(--mono); color: var(--accent); background: var(--accent-soft); padding: 5px 8px; border-radius: 7px;
+  font-variant-numeric: tabular-nums; }
+/* What is happening right now, with a live seconds counter so a slow AI step never looks frozen */
+.now-sub { display: flex; align-items: center; gap: 8px; font: 600 13px/1.3 var(--ui); color: var(--muted); margin-top: -4px; }
+.now-sub .t { margin-left: auto; font: 600 12px var(--mono); color: var(--dim); font-variant-numeric: tabular-nums; }
+.now-sub .dots i { display: inline-block; width: 4px; height: 4px; margin-right: 3px; border-radius: 50%; background: currentColor; animation: blink 1.2s infinite; }
+.now-sub .dots i:nth-child(2) { animation-delay: .2s; } .now-sub .dots i:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+.now-sub.busy { color: var(--warn); }
+
+/* Ask (approval) */
+.ask { border-color: rgba(255,181,71,.6); background: linear-gradient(180deg, var(--warn-soft), var(--card) 80%); animation: rise .3s var(--ease); }
+.ask-h { display: flex; gap: 8px; align-items: center; color: var(--warn); font: 800 12px var(--ui); text-transform: uppercase; letter-spacing: .08em; }
+.ask-t { font: 700 17px/1.4 var(--ui); }
+
+/* Timeline */
+.timeline { display: flex; flex-direction: column; position: relative; padding-left: 4px; }
+.step { position: relative; display: grid; grid-template-columns: 26px minmax(0,1fr) auto; gap: 10px; padding: 7px 0; align-items: start;
+  animation: rise .3s var(--ease); }
+.step::before { content: ""; position: absolute; left: 12px; top: 30px; bottom: -8px; width: 2px; background: var(--line); }
+.step:last-child::before { display: none; }
+.node { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--bg2); border: 2px solid var(--line-hi);
+  color: var(--muted); position: relative; z-index: 1; }
+.node svg { width: 13px; height: 13px; }
+.step.ok .node { background: var(--good-soft); border-color: var(--good); color: var(--good); }
+.step.active .node { border-color: var(--accent); background: var(--accent-soft); }
+.step.active .node::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid var(--accent); opacity: .5; animation: halo 1.4s infinite; }
+@keyframes halo { from { transform: scale(.7); opacity: .7; } to { transform: scale(1.3); opacity: 0; } }
+.step.bad .node { border-color: var(--stop); color: var(--stop); background: rgba(255,77,94,.12); }
+.step.warnx .node { border-color: var(--warn); color: var(--warn); background: var(--warn-soft); }
+.step.retry { opacity: .55; }
+.step .tx { font-size: 14px; font-weight: 600; padding-top: 3px; overflow-wrap: anywhere; }
+.step.active .tx { color: var(--ink); } .step.ok .tx { color: #c9d4e0; }
+.step .tm { font: 500 11px var(--mono); color: var(--dim); padding-top: 5px; font-variant-numeric: tabular-nums; }
+.tag { display: inline-block; font: 700 9.5px/1 var(--mono); letter-spacing: .06em; color: var(--muted); border: 1px solid var(--line-hi);
+  border-radius: 5px; padding: 3px 5px; margin-right: 7px; vertical-align: 2px; }
+.step.active .tag { color: var(--accent); border-color: rgba(255,106,43,.45); }
+
+/* Result */
+.result { align-items: center; text-align: center; gap: 10px; padding: 20px 16px 16px; animation: pop .45s var(--ease); }
+@keyframes pop { from { opacity: 0; transform: scale(.94); } }
+.result.solved { border-color: rgba(52,217,138,.5); background: radial-gradient(100% 80% at 50% 0%, var(--good-soft), var(--card) 70%); }
+.result.escalated { border-color: rgba(255,181,71,.5); background: radial-gradient(100% 80% at 50% 0%, var(--warn-soft), var(--card) 70%); }
+.result.stopped { border-color: rgba(255,77,94,.5); background: radial-gradient(100% 80% at 50% 0%, rgba(255,77,94,.12), var(--card) 70%); }
+.badge { width: 64px; height: 64px; }
+.badge circle { fill: none; stroke-width: 4; stroke-dasharray: 190; stroke-dashoffset: 190; animation: draw .6s var(--ease) forwards; }
+.badge path { fill: none; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 60; stroke-dashoffset: 60; animation: draw .4s .45s var(--ease) forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.result h2 { margin: 0; font: 800 26px/1.1 var(--display); letter-spacing: -0.02em; }
+.result p { margin: 0; color: #c9d4e0; max-width: 34ch; }
+.result .meta { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.result .meta:empty { display: none; }
+.result .meta span { font: 700 11.5px/1 var(--mono); color: var(--muted); background: var(--bg2); border: 1px solid var(--line); padding: 6px 9px; border-radius: 8px; }
+.learn { width: 100%; text-align: left; background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.crumbs { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 6px; }
+.crumb { font: 700 12.5px var(--ui); background: var(--accent-soft); color: var(--accent); padding: 4px 9px; border-radius: 7px; }
+.crumbs .sep { color: var(--dim); font-size: 12px; }
+
+/* Toast */
+.toast { position: fixed; left: 14px; right: 14px; bottom: 96px; background: #3a1820; border: 1px solid rgba(255,77,94,.5); color: #ffd6da;
+  padding: 11px 14px; border-radius: 12px; font-weight: 600; font-size: 14px; display: flex; gap: 10px; align-items: flex-start; z-index: 20;
+  box-shadow: 0 12px 30px rgba(0,0,0,.45); animation: rise .3s var(--ease); }
+.toast svg { width: 18px; height: 18px; flex: none; color: var(--stop); margin-top: 1px; }
+
+/* Footer / STOP */
+footer { padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 7px; border-top: 1px solid var(--line); background: rgba(11,17,25,.85); backdrop-filter: blur(8px); }
+#stop { width: 100%; border: 0; border-radius: 13px; padding: 15px; font: 800 16px/1 var(--ui); letter-spacing: .06em; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px; color: white; background: linear-gradient(135deg, #ff4d5e, #e0263a);
+  box-shadow: 0 8px 22px rgba(255,77,94,.35); transition: transform .15s var(--ease), opacity .3s, box-shadow .3s; }
+#stop svg { width: 16px; height: 16px; }
+#stop:active { transform: scale(.97); }
+#stop:disabled { background: var(--card); color: var(--dim); box-shadow: none; cursor: default; border: 1px solid var(--line); }
+body.running #stop:not(:disabled) { animation: stopglow 2s infinite; }
+@keyframes stopglow { 50% { box-shadow: 0 8px 30px rgba(255,77,94,.6); } }
+/* "AI in control" strip: only while a task runs */
+.control { display: none; align-items: center; gap: 9px; font: 700 12.5px/1.3 var(--ui); color: #ffd6da; background: rgba(255,77,94,.1);
+  border: 1px solid rgba(255,77,94,.35); border-radius: 10px; padding: 8px 11px; }
+body.running .control { display: flex; }
+.control .live { width: 8px; height: 8px; border-radius: 50%; background: var(--stop); flex: none; animation: ping-red 1.2s infinite; }
+@keyframes ping-red { 0% { box-shadow: 0 0 0 0 rgba(255,77,94,.7); } 100% { box-shadow: 0 0 0 7px rgba(255,77,94,0); } }
+.foot { display: flex; justify-content: space-between; font: 500 11px var(--mono); color: var(--dim); }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="mark" aria-hidden="true">
+    <svg viewBox="0 0 24 24"><path d="M5 3l13 7-6 1.8L9.5 18z" fill="#1b0c03"/><path d="M17 15.5l1.2 2.3 2.3 1.2-2.3 1.2-1.2 2.3-1.2-2.3-2.3-1.2 2.3-1.2z" fill="#fff"/></svg>
+  </div>
+  <div class="logo">Fix<span>Pilot</span></div>
+  <div id="pill" class="pill"><span class="dot"></span><span id="pillT">Connecting</span></div>
+  <div class="progress"><i></i></div>
+</header>
+
+<main id="main">
+  <!-- ============ HOME ============ -->
+  <section class="view" id="vHome">
+    <div class="tabs" id="tabs" role="tablist">
+      <div class="ind"></div>
+      <button id="tab1" class="on" role="tab">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Personal help</button>
+      <button id="tab2" role="tab">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Support code</button>
+    </div>
+
+    <!-- Mode 1 -->
+    <div id="m1" class="view">
+      <h1>What can I <em>fix</em> for you?</h1>
+      <p class="sub">Type or say the problem. FixPilot does it on your screen.</p>
+      <div class="composer">
+        <textarea id="query" rows="3" maxlength="300" placeholder="e.g. My WiFi and Bluetooth icons are missing"></textarea>
+        <div class="bar">
+          <button class="icon-btn" id="mic" title="Speak your problem" aria-label="Speak">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+          </button>
+          <button class="chip-lang" id="lang" title="Speech language">EN</button>
+          <span class="chars" id="chars">0/300</span>
+        </div>
+      </div>
+      <div class="examples" id="examples">
+        <button class="ex">🌙 Turn on dark mode</button>
+        <button class="ex">📶 Show WiFi &amp; Bluetooth icons</button>
+        <button class="ex">📁 New folder "Bills" on Desktop</button>
+        <button class="ex">📝 Open Notepad and type hello</button>
+      </div>
+    </div>
+
+    <!-- Mode 2 -->
+    <div id="m2" class="view hidden">
+      <h1>Got a <em>support code</em>?</h1>
+      <p class="sub">Your software's support team gives you a 6-digit code.</p>
+      <div class="otp" id="otp">
+        <input inputmode="numeric" maxlength="1" aria-label="Digit 1"><input inputmode="numeric" maxlength="1" aria-label="Digit 2"><input inputmode="numeric" maxlength="1" aria-label="Digit 3">
+        <div class="dash"></div>
+        <input inputmode="numeric" maxlength="1" aria-label="Digit 4"><input inputmode="numeric" maxlength="1" aria-label="Digit 5"><input inputmode="numeric" maxlength="1" aria-label="Digit 6">
+      </div>
+      <div class="note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+        <span>Nothing happens until you see the request and press <b>Accept</b>. You can stop FixPilot anytime.</span>
+      </div>
+    </div>
+
+    <div id="modesBlock">
+      <div class="label" style="margin-bottom:8px">How should FixPilot help?</div>
+      <div class="modes" id="modes">
+        <button class="mode" data-mode="guide"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/></svg></span><b>Guide me</b><small>Shows where. You click.</small></button>
+        <button class="mode" data-mode="assist"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12l4 4 10-10"/></svg></span><b>Ask first</b><small>Approve each step.</small></button>
+        <button class="mode" data-mode="auto"><span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span><b>Just fix it</b><small>Hands-free.</small></button>
+      </div>
+    </div>
+
+    <button class="btn primary" id="go">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span id="goT">Fix it</span>
+    </button>
+  </section>
+
+  <!-- ============ OFFER (Mode 2) ============ -->
+  <section class="card offer hidden" id="vOffer">
+    <div class="who"><div class="avatar" id="offerAv">S</div><div><b id="offerWho">Support</b><small>wants FixPilot to help you with</small></div></div>
+    <div class="quote" id="offerQ"></div>
+    <div class="label">How should FixPilot help?</div>
+    <div class="seg" id="seg" role="radiogroup">
+      <button data-mode="auto" role="radio">Just fix it</button><button data-mode="assist" role="radio">Ask first</button><button data-mode="guide" role="radio">Guide me</button>
+    </div>
+    <div class="seg-help" id="segHelp"></div>
+    <div class="row">
+      <button class="btn good" id="accept"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12l4 4 10-10"/></svg>Accept</button>
+      <button class="btn ghost" id="decline">Decline</button>
+    </div>
+    <div class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+      <span>FixPilot will use your screen, mouse and keyboard only for this task.</span></div>
+  </section>
+
+  <!-- ============ WORKING ============ -->
+  <section class="view hidden" id="vWork">
+    <div class="card now">
+      <div class="now-top"><div class="spinner"></div><span class="label" style="color:var(--accent)">FixPilot is working</span><span class="stepno" id="stepNo">Step 1</span></div>
+      <div class="now-text" id="nowText">Looking at your screen…</div>
+      <div class="now-sub" id="nowSub"><span class="dots"><i></i><i></i><i></i></span><span id="nowSubT">Reading your screen</span><span class="t" id="nowSubTime">0s</span></div>
+      <div class="query" id="nowQuery"></div>
+    </div>
+
+    <div class="card ask hidden" id="ask">
+      <div class="ask-h"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><span id="askH">Your approval</span></div>
+      <div class="ask-t" id="askT"></div>
+      <div class="row" id="askBtns"></div>
+    </div>
+
+    <div class="card result hidden" id="result">
+      <svg class="badge" id="badge" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29"/><path d="M20 33l8 8 16-17"/></svg>
+      <h2 id="resH"></h2>
+      <p id="resS"></p>
+      <div class="meta" id="resMeta"></div>
+      <div class="learn hidden" id="resL"><div class="label">Next time, do it yourself</div><div class="crumbs" id="crumbs"></div></div>
+      <button class="btn ghost" id="again" style="width:100%">New task</button>
+    </div>
+
+    <div>
+      <div class="label" style="margin-bottom:6px">Steps</div>
+      <div class="timeline" id="feed"></div>
+    </div>
+  </section>
+</main>
+
+<div class="toast hidden" id="toast" role="alert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span id="toastT"></span></div>
+
+<footer>
+  <div class="control" id="control" role="status"><span class="live"></span><span id="controlT">FixPilot is using your mouse and keyboard</span></div>
+  <button id="stop" disabled><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2.5"/></svg>STOP</button>
+  <div class="foot"><span>Ctrl+Shift+X also stops</span><span id="model">gemini</span></div>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const ICON = {
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M5 12l4 4 10-10"/></svg>',
+  dot: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 7v6M12 17h.01"/></svg>',
+  hand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 8v5M12 16h.01"/></svg>',
+  wait: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 8v4l3 2"/></svg>',
+};
+let ws, mode = "auto", tab = 1, running = false, timer = null, t0 = 0, lang = "en-IN", activeStep = null;
+let stepCount = 0, lastEvAt = 0, lastTs = 0, isMode2 = false;
+const TAGS = { click: "CLICK", double_click: "CLICK", triple_click: "CLICK", right_click: "CLICK", middle_click: "CLICK",
+  type: "TYPE", press_key: "KEY", hotkey: "KEY", key_down: "KEY", key_up: "KEY", scroll: "SCROLL", drag_and_drop: "DRAG",
+  move: "MOVE", wait: "WAIT", open_url: "OPEN", open_app: "OPEN", open_settings_page: "OPEN", ask_user: "ASK" };
+const MODE_HELP = { auto: "FixPilot clicks and types for you. You can stop it anytime.",
+  assist: "FixPilot asks you before every click.", guide: "FixPilot points at each button. You do the clicking." };
+const CONTROL_TEXT = { auto: "FixPilot is using your mouse and keyboard", assist: "FixPilot acts only after you approve",
+  guide: "You click. FixPilot shows you where" };
+
+/* ---------- small helpers ---------- */
+function pill(text, cls = "") { $("pill").className = "pill " + cls; $("pillT").textContent = text; }
+let toastTimer;
+function toast(t) { $("toastT").textContent = t; $("toast").classList.remove("hidden"); clearTimeout(toastTimer); toastTimer = setTimeout(() => $("toast").classList.add("hidden"), 5000); }
+function fmt(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); else toast("FixPilot is not connected yet. Please wait a second."); }
+function show(id, on) { $(id).classList.toggle("hidden", !on); }
+
+/* ---------- home: tabs, modes ---------- */
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll("[data-mode]").forEach(b => { b.classList.toggle("on", b.dataset.mode === m); b.setAttribute("aria-checked", b.dataset.mode === m); });
+  $("segHelp").textContent = MODE_HELP[m] || "";
+}
+function setTab(n) {
+  tab = n;
+  $("tabs").classList.toggle("second", n === 2);
+  $("tab1").classList.toggle("on", n === 1); $("tab2").classList.toggle("on", n === 2);
+  show("m1", n === 1); show("m2", n === 2);
+  show("modesBlock", n === 1);  // Mode 2 picks the trust mode on the Accept card instead
+  $("goT").textContent = n === 1 ? "Fix it" : "Connect";
+  setMode("auto");  // "Just fix it" by default in both tabs; assist was too slow for Mode 2
+  (n === 1 ? $("query") : otpInputs[0]).focus();
+}
+function goHome() { show("vHome", true); show("vOffer", false); show("vWork", false); setTab(tab); }
+
+/* ---------- working view ---------- */
+function setRunning(r) {
+  running = r; document.body.classList.toggle("running", r); $("stop").disabled = !r;
+  clearInterval(timer);
+  if (r) {
+    t0 = lastEvAt = Date.now();
+    timer = setInterval(() => {
+      pill("Working · " + fmt((Date.now() - t0) / 1000), "working");
+      $("nowSubTime").textContent = Math.round((Date.now() - lastEvAt) / 1000) + "s";
+    }, 500);
+  }
+}
+function startView(query) {
+  show("vHome", false); show("vOffer", false); show("vWork", true);
+  show("result", false); show("ask", false); $("feed").innerHTML = ""; activeStep = null;
+  document.querySelector(".now").classList.remove("hidden");
+  $("nowText").textContent = "Looking at your screen…"; $("nowQuery").textContent = query ? "“" + query + "”" : "";
+  stepCount = 0; lastTs = 0; $("stepNo").textContent = "Step 1"; setSub("Reading your screen");
+}
+function finishActive(cls = "ok", icon = ICON.check) {
+  if (!activeStep) return;
+  activeStep.classList.remove("active"); activeStep.classList.add(cls);
+  activeStep.querySelector(".node").innerHTML = icon; activeStep = null;
+}
+function setSub(text, busy = false) {
+  lastEvAt = Date.now(); $("nowSubT").textContent = text; $("nowSub").classList.toggle("busy", busy); $("nowSubTime").textContent = "0s";
+}
+function addStep(ev) {
+  const retry = ev.action === "retry";
+  const type = ev.type;
+  if (type === "highlight") return; // guide highlight already shown as an intent
+  if (retry) {  // busy retries are noise in the step list: show them in the status line only
+    const n = (ev.text || "").match(/\((\d+\/\d+)\)/);
+    setSub("Google's AI is busy, trying again" + (n ? " (" + n[1] + ")" : ""), true);
+    return;
+  }
+  if (type === "intent") {
+    stepCount++; $("stepNo").textContent = "Step " + stepCount;
+    setSub(mode === "guide" ? "Waiting for your click" : "Doing it, then checking the screen");
+  }
+  if (type === "intent" && !retry) finishActive();
+  const d = document.createElement("div");
+  d.className = "step";
+  const ts = ev.ts || Date.now() / 1000;
+  const t = lastTs ? "+" + Math.max(0, Math.round(ts - lastTs)) + "s"
+                   : new Date(ts * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  lastTs = ts;
+  d.innerHTML = '<div class="node"></div><div class="tx"></div><div class="tm"></div>';
+  const tag = type === "intent" && TAGS[ev.action];
+  d.querySelector(".tx").innerHTML = tag ? '<span class="tag">' + tag + '</span>' : "";
+  d.querySelector(".tx").append(document.createTextNode(ev.text || ev.action || ""));
+  d.querySelector(".tm").textContent = t;
+  d.querySelector(".tm").title = new Date(ts * 1000).toLocaleTimeString();
+  const node = d.querySelector(".node");
+  if (type === "intent") { d.classList.add("active"); node.innerHTML = ICON.dot; activeStep = d; $("nowText").textContent = ev.text || "Working…"; }
+  else if (type === "approval") { d.classList.add("warnx"); node.innerHTML = ICON.hand; }
+  else if (type === "done") { finishActive(); d.classList.add("ok"); node.innerHTML = ICON.check; }
+  else if (type === "escalate") { finishActive(); d.classList.add("warnx"); node.innerHTML = ICON.warn; }
+  else if (type === "error" || type === "stopped") { finishActive("bad", ICON.x); d.classList.add("bad"); node.innerHTML = ICON.x; }
+  $("feed").appendChild(d);
+  d.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+function showAsk(kind, text) {
+  const btns = $("askBtns"); btns.innerHTML = "";
+  setSub("Waiting for you");
+  if (kind === "user") {  // FixPilot pauses while the user does something private (password, login, admin popup)
+    $("askH").textContent = "Your turn · FixPilot is paused";
+    $("askT").textContent = text;
+    $("controlT").textContent = "Paused. FixPilot is not watching what you type";
+    btns.append(mk("Continue", "good", () => send({ type: "approve" })),
+                mk("Cancel task", "ghost", () => send({ type: "deny" })));
+  } else if (kind === "next") {
+    $("askH").textContent = "Your turn";
+    $("askT").textContent = "Click the highlighted spot on your screen, then press Done.";
+    btns.append(mk('Done, next step <span class="kbd">Enter</span>', "good", () => send({ type: "next" })));
+  } else {
+    $("askH").textContent = "Your approval";
+    $("askT").textContent = text;
+    btns.append(mk('Approve <span class="kbd">Enter</span>', "good", () => send({ type: "approve" })),
+                mk('Deny <span class="kbd">Esc</span>', "ghost", () => send({ type: "deny" })));
+  }
+  show("ask", true);
+  $("ask").scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+function mk(html, cls, fn) { const b = document.createElement("button"); b.className = "btn " + cls; b.innerHTML = html; b.onclick = () => { show("ask", false); fn(); }; return b; }
+function showResult(r) {
+  finishActive(r.status === "solved" ? "ok" : "bad", r.status === "solved" ? ICON.check : ICON.x);
+  document.querySelector(".now").classList.add("hidden"); show("ask", false);
+  const R = $("result"); R.className = "card result " + r.status;
+  const col = r.status === "solved" ? "var(--good)" : r.status === "escalated" ? "var(--warn)" : "var(--stop)";
+  $("badge").innerHTML = r.status === "solved"
+    ? `<circle cx="32" cy="32" r="29" style="stroke:${col}"/><path d="M20 33l8 8 16-17" style="stroke:${col}"/>`
+    : r.status === "escalated"
+      ? `<circle cx="32" cy="32" r="29" style="stroke:${col}"/><path d="M32 19v16M32 45v1" style="stroke:${col}"/>`
+      : `<circle cx="32" cy="32" r="29" style="stroke:${col}"/><path d="M23 23l18 18M41 23L23 41" style="stroke:${col}"/>`;
+  const secs = r.seconds ? " in " + fmt(r.seconds) : "";
+  const meta = [];
+  if (stepCount) meta.push(stepCount + (stepCount === 1 ? " step" : " steps"));
+  if (r.seconds && r.status !== "solved") meta.push(fmt(r.seconds) + " total");  // solved already shows it in the heading
+  if (isMode2) meta.push(r.status === "escalated" ? "Support team notified" : "Support team updated");
+  $("resMeta").innerHTML = ""; meta.forEach(t => { const s = document.createElement("span"); s.textContent = t; $("resMeta").append(s); });
+  $("resH").textContent = r.status === "solved" ? "Fixed" + secs : r.status === "escalated" ? "Handed to support" : "Stopped";
+  $("resS").textContent = r.summary || "";
+  const path = (r.learn_path || "").split(/\s*>\s*/).filter(Boolean);
+  const cr = $("crumbs"); cr.innerHTML = "";
+  path.forEach((p, i) => { if (i) { const s = document.createElement("span"); s.className = "sep"; s.textContent = "›"; cr.append(s); }
+    const c = document.createElement("span"); c.className = "crumb"; c.textContent = p; cr.append(c); });
+  show("resL", path.length > 0);
+  show("result", true);
+  $("main").scrollTo({ top: 0, behavior: "smooth" });
+  pill(r.status === "solved" ? "Fixed" + secs : r.status === "escalated" ? "Needs support" : "Stopped",
+       r.status === "solved" ? "good" : r.status === "escalated" ? "warn" : "off");
+}
+
+/* ---------- OTP code boxes ---------- */
+const otpInputs = Array.from(document.querySelectorAll("#otp input"));
+const code = () => otpInputs.map(i => i.value).join("");
+otpInputs.forEach((inp, i) => {
+  inp.addEventListener("input", () => {
+    inp.value = inp.value.replace(/\D/g, "").slice(-1);
+    inp.classList.toggle("filled", !!inp.value);
+    if (inp.value && i < 5) otpInputs[i + 1].focus();
+    if (code().length === 6) $("go").click();
+  });
+  inp.addEventListener("keydown", (e) => {
+    if (e.key === "Backspace" && !inp.value && i > 0) { otpInputs[i - 1].focus(); otpInputs[i - 1].value = ""; otpInputs[i - 1].classList.remove("filled"); }
+    if (e.key === "Enter") $("go").click();
+  });
+  inp.addEventListener("paste", (e) => {
+    const d = (e.clipboardData.getData("text") || "").replace(/\D/g, "").slice(0, 6);
+    if (!d) return; e.preventDefault();
+    d.split("").forEach((ch, k) => { otpInputs[k].value = ch; otpInputs[k].classList.add("filled"); });
+    otpInputs[Math.min(d.length, 5)].focus();
+    if (d.length === 6) $("go").click();
+  });
+});
+function clearOtp() { otpInputs.forEach(i => { i.value = ""; i.classList.remove("filled"); }); }
+
+/* ---------- connection ---------- */
+function connect() {
+  ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onopen = () => { if (!running) pill("Ready", "ready"); };
+  ws.onclose = () => {
+    if (running) { toast("Lost connection to FixPilot. If it is still moving the mouse, press Ctrl+Shift+X."); setRunning(false); }
+    pill("Offline", "off"); setTimeout(connect, 1500);
+  };
+  ws.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    switch (m.kind) {
+      case "hello": $("model").textContent = m.model; break;
+      case "started": isMode2 = !!m.mode2; setMode(m.mode || mode); $("controlT").textContent = CONTROL_TEXT[mode] || CONTROL_TEXT.auto;
+        startView(m.query); setRunning(true); break;
+      case "event": addStep(m); break;
+      case "ask": showAsk(m.ask, m.text); break;
+      case "ask_done": show("ask", false); $("controlT").textContent = CONTROL_TEXT[mode] || CONTROL_TEXT.auto; break;
+      case "result": setRunning(false); showResult(m); break;
+      case "offer":
+        $("offerWho").textContent = m.vendor_name + " support"; $("offerAv").textContent = (m.vendor_name || "S")[0].toUpperCase();
+        $("offerQ").textContent = m.query; show("vHome", false); show("vOffer", true); break;
+      case "declined": clearOtp(); goHome(); break;
+      case "error":
+        toast(m.text);
+        if (tab === 2 && !running) { $("otp").classList.remove("shake"); void $("otp").offsetWidth; $("otp").classList.add("shake"); show("vOffer", false); show("vHome", true); }
+        break;
+    }
+  };
+}
+
+/* ---------- voice input ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+$("mic").onclick = () => {
+  if (!SR) { toast("Voice input isn't supported here. Please type instead."); return; }
+  if (rec) { rec.stop(); return; }
+  rec = new SR(); rec.lang = lang; rec.interimResults = true;
+  $("mic").classList.add("rec");
+  rec.onresult = (e) => { $("query").value = Array.from(e.results).map(r => r[0].transcript).join(" "); updateChars(); };
+  rec.onerror = (e) => toast("Mic problem: " + e.error + ". Check microphone permission.");
+  rec.onend = () => { $("mic").classList.remove("rec"); rec = null; };
+  rec.start();
+};
+$("lang").onclick = () => { lang = lang === "en-IN" ? "hi-IN" : "en-IN"; $("lang").textContent = lang === "en-IN" ? "EN" : "हि"; };
+function updateChars() { $("chars").textContent = $("query").value.length + "/300"; }
+$("query").addEventListener("input", updateChars);
+
+/* ---------- actions ---------- */
+document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => setMode(b.dataset.mode));
+document.querySelectorAll(".ex").forEach(b => b.onclick = () => { $("query").value = b.textContent.replace(/^\S+\s/, ""); updateChars(); $("query").focus(); });
+$("tab1").onclick = () => setTab(1);
+$("tab2").onclick = () => setTab(2);
+$("go").onclick = () => {
+  if (tab === 1) {
+    const q = $("query").value.trim();
+    if (!q) { toast("Type or say your problem first."); $("query").focus(); return; }
+    send({ type: "start", query: q, mode });
+  } else {
+    if (code().length !== 6) { toast("Enter all 6 digits of your support code."); $("otp").classList.remove("shake"); void $("otp").offsetWidth; $("otp").classList.add("shake"); return; }
+    send({ type: "join", code: code() });
+  }
+};
+$("query").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("go").click(); } };
+$("accept").onclick = () => send({ type: "accept", mode });
+$("decline").onclick = () => send({ type: "decline" });
+$("stop").onclick = () => send({ type: "stop" });
+$("again").onclick = () => { clearOtp(); pill("Ready", "ready"); goHome(); };
+document.addEventListener("keydown", (e) => {
+  if ($("ask").classList.contains("hidden")) return;
+  const b = $("askBtns").querySelectorAll("button");
+  if (e.key === "Enter" && b[0]) { e.preventDefault(); b[0].click(); }
+  if (e.key === "Escape" && b[1]) { e.preventDefault(); b[1].click(); }
+});
+
+/* ---------- start ---------- */
+setTab(1);
+const demo = location.hash;
+if (demo === "#demo" || demo === "#done" || demo === "#offer" || demo === "#code") {
+  // Preview states for screenshots and slides (no agent needed)
+  const now = Date.now() / 1000;
+  if (demo === "#code") { setTab(2); "482913".split("").forEach((c, i) => { otpInputs[i].value = c; otpInputs[i].classList.add("filled"); }); pill("Ready", "ready"); }
+  if (demo === "#offer") { setTab(2); $("offerWho").textContent = "BilliGo Cloud Billing & ERP support"; $("offerAv").textContent = "B";
+    $("offerQ").textContent = "Add team member: Rahul Sharma, rahul@projectw.in, role Sales"; show("vHome", false); show("vOffer", true); pill("Ready", "ready"); }
+  if (demo === "#demo" || demo === "#done") {
+    isMode2 = true; startView("Add team member: Rahul Sharma, rahul@projectw.in, role Sales"); setRunning(true);
+    [["Open the Team members page", "open_url", -41], ["Click 'Add member'", "click", -30], ["Type rahul@projectw.in in Email", "type", -21],
+     ["Type Rahul Sharma in Name", "type", -14], ["Choose 'Sales' in the Role dropdown", "click", -6]]
+      .forEach(([text, action, dt]) => addStep({ type: "intent", text, action, ts: now + dt }));
+    if (demo === "#demo") addStep({ type: "intent", text: "Gemini is busy, retrying (1/3)...", action: "retry", ts: now });
+    else { addStep({ type: "done", text: "Rahul Sharma was added as Sales.", ts: now }); setRunning(false);
+      showResult({ status: "solved", seconds: 48, summary: "Rahul Sharma (rahul@projectw.in) is now a team member with the Sales role.",
+                   learn_path: "Settings > Team members > Add member" }); }
+  }
+} else {
+  connect();
+}
+</script>
+</body>
+</html>
