@@ -4,7 +4,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$Project,
     [string]$Region = "asia-south1",   # Mumbai: lowest latency for India
-    [string]$Service = "fixpilot-server"
+    [string]$Service = "fixpilot-server",
+    [int]$MinInstances = 0             # 0 = scale to zero (about free); 1 = always on (no cold start, ~Rs 1000/month)
 )
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
@@ -22,10 +23,11 @@ $version = Get-Date -Format "yyyyMMdd-HHmm"
 gcloud config set project $Project
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
 
-# Sessions live in memory, so run exactly ONE instance (min 1 = no cold start, max 1 = every code is
-# found on the same instance). A second instance would not know codes created on the first.
+# Sessions live in memory, so never run more than ONE instance (max 1 = every code is found on the same
+# instance; a second instance would not know codes created on the first). With min 0 the instance sleeps
+# after ~15 idle minutes and waiting codes are lost; use -MinInstances 1 during judging if that matters.
 gcloud run deploy $Service --source . --region $Region --allow-unauthenticated `
-    --min-instances 1 --max-instances 1 --memory 512Mi --cpu 1 `
+    --min-instances $MinInstances --max-instances 1 --memory 512Mi --cpu 1 `
     --set-env-vars "FIXPILOT_TOKEN=$token,FIXPILOT_VERSION=$version"
 
 $url = gcloud run services describe $Service --region $Region --format "value(status.url)"
