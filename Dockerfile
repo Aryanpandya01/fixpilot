@@ -14,6 +14,7 @@ COPY kb/ kb/
 COPY demo_app/ demo_app/
 COPY pitch/ pitch/
 COPY explainer/ explainer/
+COPY app/panel/index.html app/panel/index.html
 
 # Cloud Run sets PORT (8080); locally it falls back to 8080 too.
 CMD ["sh", "-c", "uvicorn server.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

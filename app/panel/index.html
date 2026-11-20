@@ -71,6 +71,12 @@ header { padding: 14px 16px 12px; display: flex; align-items: center; gap: 10px;
 body.running .progress i { opacity: 1; animation: sweep 1.4s var(--ease) infinite; }
 @keyframes sweep { to { transform: translateX(260%); } }
 
+/* Preview banner: shown only when the panel is opened from the website instead of the installed app */
+.preview-bar { margin: 0 14px; padding: 9px 12px; border-radius: 10px; font: 600 12.5px/1.4 var(--ui); color: var(--ink);
+  background: var(--blue-soft); border: 1px solid rgba(92,178,255,.4); }
+.preview-bar b { color: var(--blue); }
+.preview-bar a { color: var(--blue); font-weight: 800; }
+
 /* ---------- Layout ---------- */
 main { flex: 1; overflow-y: auto; padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; }
 main::-webkit-scrollbar { width: 8px; } main::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
@@ -243,6 +249,8 @@ textarea::placeholder { color: var(--dim); }
   padding: 11px 14px; border-radius: 12px; font-weight: 600; font-size: 14px; display: flex; gap: 10px; align-items: flex-start; z-index: 20;
   box-shadow: 0 12px 30px rgba(0,0,0,.45); animation: rise .3s var(--ease); }
 .toast svg { width: 18px; height: 18px; flex: none; color: var(--stop); margin-top: 1px; }
+.toast.info { background: #12263a; border-color: rgba(92,178,255,.5); color: #d6ebff; }
+.toast.info svg { color: var(--blue); }
 
 /* Footer / STOP */
 footer { padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 7px; border-top: 1px solid var(--line); background: rgba(11,17,25,.85); backdrop-filter: blur(8px); }
@@ -274,6 +282,9 @@ body.running .control { display: flex; }
   <div id="pill" class="pill"><span class="dot"></span><span id="pillT">Connecting</span></div>
   <div class="progress"><i></i></div>
 </header>
+
+<div class="preview-bar hidden" id="previewBar"><b>Preview.</b> This is the customer app. Here it looks up real support codes
+  and plays a simulated run. To let FixPilot fix your own PC, <a href="https://github.com/Aryanpandya01/fixpilot#run-it" target="_blank" rel="noopener">install it on Windows</a>.</div>
 
 <main id="main">
   <!-- ============ HOME ============ -->
@@ -416,9 +427,14 @@ const CONTROL_TEXT = { auto: "FixPilot is using your mouse and keyboard", assist
 /* ---------- small helpers ---------- */
 function pill(text, cls = "") { $("pill").className = "pill " + cls; $("pillT").textContent = text; }
 let toastTimer;
-function toast(t) { $("toastT").textContent = t; $("toast").classList.remove("hidden"); clearTimeout(toastTimer); toastTimer = setTimeout(() => $("toast").classList.add("hidden"), 5000); }
+function toast(t, info = false) { $("toastT").textContent = t; $("toast").classList.toggle("info", info); $("toast").classList.remove("hidden"); clearTimeout(toastTimer); toastTimer = setTimeout(() => $("toast").classList.add("hidden"), 5000); }
 function fmt(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
-function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); else toast("FixPilot is not connected yet. Please wait a second."); }
+// Opened from the website (not the installed app on this PC): nothing can control the PC, so simulate.
+const PREVIEW = !["127.0.0.1", "localhost"].includes(location.hostname) && location.protocol !== "file:";
+function send(o) {
+  if (PREVIEW) { previewOn(o); return; }
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); else toast("FixPilot is not connected yet. Please wait a second.");
+}
 function show(id, on) { $(id).classList.toggle("hidden", !on); }
 
 /* ---------- home: tabs, modes ---------- */
@@ -585,8 +601,11 @@ function connect() {
     if (running) { toast("Lost connection to FixPilot. If it is still moving the mouse, press Ctrl+Shift+X."); setRunning(false); }
     pill("Offline", "off"); setTimeout(connect, 1500);
   };
-  ws.onmessage = (e) => {
-    const m = JSON.parse(e.data);
+  ws.onmessage = (e) => handle(JSON.parse(e.data));
+}
+
+/* Messages from the app server (or the preview simulation) to the UI */
+function handle(m) {
     switch (m.kind) {
       case "hello": $("model").textContent = m.model; break;
       case "started": isMode2 = !!m.mode2; setMode(m.mode || mode); $("controlT").textContent = CONTROL_TEXT[mode] || CONTROL_TEXT.auto;
@@ -604,7 +623,82 @@ function connect() {
         if (tab === 2 && !running) { $("otp").classList.remove("shake"); void $("otp").offsetWidth; $("otp").classList.add("shake"); show("vOffer", false); show("vHome", true); }
         break;
     }
+}
+
+/* ---------- preview mode: real code lookup + a simulated run ---------- */
+let sim = null, previewOffer = null;
+const pause = (ms) => new Promise(r => setTimeout(r, ms));
+const SCRIPTS = [  // [match, steps, summary, learn_path]; steps: [action, text] or ["ask_user", question]
+  [/upi|bank|ifsc/i, [["open_url", "Open Settings > Bank & UPI"], ["type", "Fill in bank name, account holder, account number, IFSC, branch and UPI ID"],
+    ["click", "Click 'Save changes'"]], "Bank details and the UPI ID are saved and will print on every invoice.", "Settings > Bank & UPI > Save changes"],
+  [/smtp|email|mail/i, [["open_url", "Open Settings > Email (SMTP)"], ["click", "Click the Hostinger provider button"], ["type", "Type aryan@projectw.in in Username"],
+    ["click", "Click the Password field"], ["ask_user", "Please type your email password in the highlighted box, then press Continue. FixPilot never reads or stores mailbox passwords."],
+    ["type", "Fill in From name and From email"], ["click", "Click 'Test connection'"], ["click", "Click 'Save settings'"]],
+    "Invoices now go out from your own domain email, and the connection test passed.", "Settings > Email (SMTP) > Save settings"],
+  [/team|member|staff|invite/i, [["open_url", "Open Settings > Team members"], ["click", "Click 'Add member'"], ["type", "Fill in the member's email and name"],
+    ["click", "Choose the role in the Role dropdown"], ["click", "Click 'Add member' to save"]], "The new team member is added and shows as Active.", "Settings > Team members > Add member"],
+  [/role|permission/i, [["open_url", "Open Settings > Roles & permissions"], ["click", "Click 'New role'"], ["type", "Type the role name"],
+    ["click", "Tick the requested permissions"], ["click", "Click 'Create role'"]], "The new role is created with the chosen permissions.", "Settings > Roles & permissions > New role"],
+  [/dark|light|theme/i, [["open_settings_page", "Open Settings > Personalization > Colors"], ["click", "Open the 'Choose your mode' dropdown"], ["click", "Click 'Dark'"]],
+    "Windows is now in dark mode.", "Settings > Personalization > Colors > Dark"],
+  [/./, [["open_app", "Open the right app or page"], ["click", "Click the setting that needs changing"], ["type", "Type the new value"], ["click", "Click Save"]],
+    "Done. The change is saved and visible on screen.", ""],
+];
+
+function previewOn(o) {
+  if (o.type === "start") runSim(o.query, false);
+  else if (o.type === "join") previewJoin(o.code);
+  else if (o.type === "accept" && previewOffer) runSim(previewOffer.query, true);
+  else if (o.type === "decline") { previewOffer = null; handle({ kind: "declined" }); }
+  else if (["approve", "next", "deny"].includes(o.type)) { if (sim && sim.answer) sim.answer(o.type !== "deny"); }
+  else if (o.type === "stop" && sim) { sim.stopped = true; if (sim.answer) sim.answer(false); }
+}
+
+async function previewJoin(code) {
+  try {
+    const r = await fetch("/sessions/" + code);
+    if (r.status === 404) return handle({ kind: "error", text: "That code is not valid. Please check it with support." });
+    const d = await r.json();
+    if (d.status !== "waiting") return handle({ kind: "error", text: "That code was already used (" + d.status + ")." });
+    previewOffer = d;
+    handle({ kind: "offer", code, vendor_name: d.vendor_name, query: d.query });
+  } catch (e) { handle({ kind: "error", text: "Can't reach the support server. Check the internet connection." }); }
+}
+
+function askSim(kind, text) {
+  handle({ kind: "ask", ask: kind, text });
+  return new Promise(r => { sim.answer = r; }).then(v => { sim.answer = null; handle({ kind: "ask_done" }); return v; });
+}
+
+async function runSim(query, mode2) {
+  const [, steps, summary, learn] = SCRIPTS.find(([re]) => re.test(query));
+  const s = sim = { stopped: false, answer: null }, t0 = Date.now();
+  const now = () => Date.now() / 1000;
+  const end = (status, text, extra = {}) => {
+    handle({ kind: "event", type: status === "solved" ? "done" : "stopped", text, ts: now() });
+    handle({ kind: "result", status, summary: text, seconds: (Date.now() - t0) / 1000, ...extra });
+    toast("This was a simulated run. Install FixPilot on Windows to let it fix your PC for real.", true);
   };
+  handle({ kind: "started", query, mode, mode2 });
+  for (const [action, text] of steps) {
+    await pause(1600 + Math.random() * 1400);  // the AI looking at the screen
+    if (s.stopped) return end("stopped", "Stopped by user");
+    if (action === "ask_user") {
+      handle({ kind: "event", type: "approval", text, action, ts: now() });
+      if (!(await askSim("user", text))) return end("stopped", "User cancelled");
+      continue;
+    }
+    handle({ kind: "event", type: "intent", text, action, ts: now() });
+    if (mode === "assist" && !(await askSim("approve", text + "?"))) return end("stopped", "User denied a step");
+    if (mode === "guide" && !(await askSim("next"))) return end("stopped", "Stopped by user");
+    if (s.stopped) return end("stopped", "Stopped by user");
+  }
+  await pause(1500);
+  end("solved", summary, { learn_path: learn });
+}
+
+function startPreview() {
+  show("previewBar", true); pill("Preview", "ready"); $("model").textContent = "preview · simulated run";
 }
 
 /* ---------- voice input ---------- */
@@ -670,6 +764,8 @@ if (demo === "#demo" || demo === "#done" || demo === "#offer" || demo === "#code
       showResult({ status: "solved", seconds: 48, summary: "Rahul Sharma (rahul@projectw.in) is now a team member with the Sales role.",
                    learn_path: "Settings > Team members > Add member" }); }
   }
+} else if (PREVIEW) {
+  startPreview();
 } else {
   connect();
 }

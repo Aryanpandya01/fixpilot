@@ -256,6 +256,17 @@ def finish_session(code: str, req: Finish):
     return {"ok": True}
 
 
+PANEL_INDEX = REPO_ROOT / "app" / "panel" / "index.html"
+
+
+@app.get("/app", include_in_schema=False)
+def get_panel_preview():
+    """The customer panel in preview mode (it simulates the run; the real one is installed on the customer PC)."""
+    if PANEL_INDEX.is_file():
+        return FileResponse(str(PANEL_INDEX))
+    raise HTTPException(status_code=404, detail="panel not bundled")
+
+
 DEMO_APP_DIR = REPO_ROOT / "demo_app"
 PITCH_DIR = REPO_ROOT / "pitch"
 EXPLAINER_DIR = REPO_ROOT / "explainer"
