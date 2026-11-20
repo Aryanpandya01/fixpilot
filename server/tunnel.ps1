@@ -4,7 +4,9 @@
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
 
-if (-not (Get-Command cloudflared -ErrorAction SilentlyContinue)) {
+$cf = (Get-Command cloudflared -ErrorAction SilentlyContinue).Source
+if (-not $cf -and (Test-Path "$env:LOCALAPPDATA\FixPilot\cloudflared.exe")) { $cf = "$env:LOCALAPPDATA\FixPilot\cloudflared.exe" }
+if (-not $cf) {
     Write-Host "cloudflared is not installed. Run:  winget install --id Cloudflare.cloudflared  then open a new terminal." -ForegroundColor Yellow
     exit 1
 }
@@ -14,7 +16,7 @@ if (-not (Get-NetTCPConnection -LocalPort 9000 -State Listen -ErrorAction Silent
     Start-Sleep -Seconds 3
 }
 Write-Host "Starting tunnel... the public link is the https://....trycloudflare.com line below." -ForegroundColor Cyan
-cloudflared tunnel --url http://localhost:9000 2>&1 | ForEach-Object {
+& $cf tunnel --url http://localhost:9000 2>&1 | ForEach-Object {
     $line = "$_"
     if ($line -match "https://[a-z0-9-]+\.trycloudflare\.com") {
         Write-Host ""; Write-Host "  PUBLIC LINK: $($Matches[0])" -ForegroundColor Green; Write-Host ""
