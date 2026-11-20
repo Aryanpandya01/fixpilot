@@ -1,0 +1,15 @@
+# Render.com Blueprint: free hosting for the FixPilot session server + support dashboard (no card needed).
+# Render: New + > Blueprint > pick this repo > fill FIXPILOT_TOKEN > Apply.
+services:
+  - type: web
+    name: fixpilot
+    runtime: docker            # builds the repo's Dockerfile (Render sets PORT; the Dockerfile uses it)
+    plan: free                 # sleeps after ~15 idle minutes; the first visit after that takes ~1 minute
+    region: singapore          # closest free region to India
+    healthCheckPath: /health
+    numInstances: 1            # sessions live in memory: exactly one instance
+    envVars:
+      - key: FIXPILOT_TOKEN    # same value as FIXPILOT_TOKEN in the .env of every PC running FixPilot
+        sync: false
+      - key: FIXPILOT_VERSION
+        value: render
