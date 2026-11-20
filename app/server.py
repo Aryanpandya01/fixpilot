@@ -149,8 +149,24 @@ def panel() -> FileResponse:
     return FileResponse(APP_DIR / "panel" / "index.html")
 
 
+LOCAL_HOSTS = ("127.0.0.1", "localhost")
+
+
+def _origin_ok(ws: WebSocket) -> bool:
+    """Only the FixPilot panel itself may drive the agent. Without this, ANY website open in the browser
+    could connect to ws://127.0.0.1:8000/ws and start a task on this PC. Non-browser clients send no Origin."""
+    origin = ws.headers.get("origin")
+    if origin is None:
+        return True
+    host = ws.headers.get("host", "")
+    return origin == f"http://{host}" and host.split(":")[0] in LOCAL_HOSTS
+
+
 @app.websocket("/ws")
 async def ws_endpoint(ws: WebSocket) -> None:
+    if not _origin_ok(ws):
+        await ws.close(code=1008)  # policy violation: another website tried to control this PC
+        return
     await ws.accept()
     s = PanelSession(ws, asyncio.get_running_loop())
     await ws.send_json({"kind": "hello", "server_url": SERVER_URL, "model": fp_agent.MODEL})
