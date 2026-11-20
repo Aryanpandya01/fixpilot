@@ -52,6 +52,7 @@ h2 { font: 800 22px/1.2 var(--display); letter-spacing: -.01em; margin: 0 0 14px
   font: 800 14px var(--mono); color: var(--accent); background: var(--accent-soft); border: 1px solid rgba(255,106,43,.4); }
 .steps b { display: block; font-size: 16px; }
 .steps p { margin: 4px 0 0; color: var(--muted); font-size: 14.5px; }
+.steps p b, .why p b { display: inline; font-size: inherit; margin: 0; color: var(--ink); }  /* bold words inside a sentence stay inline */
 code { font: 600 13px var(--mono); background: var(--bg2); border: 1px solid var(--line); padding: 2px 6px; border-radius: 6px; color: var(--ink); overflow-wrap: anywhere; }
 
 .why { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
