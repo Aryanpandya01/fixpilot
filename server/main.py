@@ -18,6 +18,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 KB_DIR = REPO_ROOT / "kb"
 DASHBOARD_DIR = REPO_ROOT / "dashboard"
 
+try:  # local runs read FIXPILOT_TOKEN from .env; on Cloud Run it comes from the service env vars
+    from dotenv import load_dotenv
+    load_dotenv(REPO_ROOT / ".env")
+except ImportError:
+    pass
+
 app = FastAPI(title="FixPilot Session Server")
 STARTED_AT = time.time()
 VERSION = os.getenv("FIXPILOT_VERSION", "dev")
