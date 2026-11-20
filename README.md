@@ -8,9 +8,9 @@ Built for Startup Buildathon India 2026 with Gemini Computer Use.
 
 | | Link |
 |---|---|
-| Live support desk (session server + dashboard) | `LIVE_URL` |
+| Live support desk (session server + dashboard) | https://fixpilot-server-382332871298.asia-south1.run.app |
 | Demo video | `VIDEO_URL` |
-| Customer app download | `DOWNLOAD_URL` |
+| Customer app download | [Download ZIP](https://github.com/Aryanpandya01/fixpilot/archive/refs/heads/main.zip) (setup below) |
 
 ## How it works
 
@@ -46,7 +46,7 @@ software, here the BilliGo billing app, using `kb/billigo.md`).
 ```powershell
 py -3.11 -m venv .venv
 .venv\Scripts\pip install -r agent\requirements.txt
-copy .env.example .env      # set GEMINI_API_KEY, SERVER_URL=<live url>, FIXPILOT_TOKEN=<same as server>
+copy .env.example .env      # set GEMINI_API_KEY, SERVER_URL=https://fixpilot-server-382332871298.asia-south1.run.app, FIXPILOT_TOKEN
 app\run.bat                 # opens the FixPilot panel docked on the right
 ```
 Set Windows display scaling to 100% for the most accurate clicks.
