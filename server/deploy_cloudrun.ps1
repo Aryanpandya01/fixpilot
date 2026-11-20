@@ -26,9 +26,13 @@ gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregi
 # Sessions live in memory, so never run more than ONE instance (max 1 = every code is found on the same
 # instance; a second instance would not know codes created on the first). With min 0 the instance sleeps
 # after ~15 idle minutes and waiting codes are lost; use -MinInstances 1 during judging if that matters.
-gcloud run deploy $Service --source . --region $Region --allow-unauthenticated `
+gcloud run deploy $Service --source . --region $Region --allow-unauthenticated --quiet `
     --min-instances $MinInstances --max-instances 1 --memory 512Mi --cpu 1 `
     --set-env-vars "FIXPILOT_TOKEN=$token,FIXPILOT_VERSION=$version"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Deploy FAILED (see the error above). A brand-new project often needs a few minutes for permissions; run this script again." -ForegroundColor Red
+    exit 1
+}
 
 $url = gcloud run services describe $Service --region $Region --format "value(status.url)"
 Write-Host ""
