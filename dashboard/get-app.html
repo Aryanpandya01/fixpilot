@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get FixPilot</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23ff6a2b'/%3E%3Cpath d='M6 4l12 7-5.5 1.6L10 18.5z' fill='%231b0c03'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Same night-cockpit identity as the FixPilot panel: ink surfaces, one pilot orange for actions. Single dark theme by choice. */
+:root {
+  --bg: #0b1119; --bg2: #0f1823; --card: #141f2c; --line: #243447; --line-hi: #33475e;
+  --ink: #edf2f8; --muted: #9aa9bb; --dim: #66778c; --accent: #ff6a2b; --accent-2: #ff9a3d;
+  --accent-soft: rgba(255,106,43,.13); --good: #34d98a; --blue: #5cb2ff;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --ui: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: radial-gradient(90% 50% at 100% 0%, #16233a 0%, transparent 60%), var(--bg); color: var(--ink);
+  font: 500 16px/1.6 var(--ui); -webkit-font-smoothing: antialiased; padding-inline: 16px; }
+.wrap { max-width: 760px; margin: 0 auto; padding-block: 28px 56px; display: flex; flex-direction: column; gap: 28px; }
+a { color: var(--blue); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+.top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mark { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+.logo { font: 800 21px/1 var(--display); letter-spacing: -.02em; }
+.logo span { color: var(--accent); }
+.top .back { margin-left: auto; font: 700 14px var(--ui); color: var(--muted); text-decoration: none; border: 1px solid var(--line); padding: 8px 12px; border-radius: 10px; }
+.top .back:hover { color: var(--ink); border-color: var(--line-hi); }
+
+h1 { font: 800 clamp(30px, 6vw, 44px)/1.08 var(--display); letter-spacing: -.025em; margin: 0; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--accent); }
+.lead { color: var(--muted); font-size: 17px; margin: 12px 0 0; max-width: 60ch; }
+.cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+.btn { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; font: 800 15.5px/1 var(--ui); padding: 14px 18px; border-radius: 12px; }
+.btn.primary { color: #1b0c03; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 8px 22px rgba(255,106,43,.3); }
+.btn.ghost { color: var(--ink); border: 1px solid var(--line-hi); background: var(--card); }
+.btn svg { width: 18px; height: 18px; }
+.req { margin-top: 12px; font: 600 13px var(--ui); color: var(--dim); }
+
+h2 { font: 800 22px/1.2 var(--display); letter-spacing: -.01em; margin: 0 0 14px; }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; counter-reset: s; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 14px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.steps li::before { content: counter(s); width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  font: 800 14px var(--mono); color: var(--accent); background: var(--accent-soft); border: 1px solid rgba(255,106,43,.4); }
+.steps b { display: block; font-size: 16px; }
+.steps p { margin: 4px 0 0; color: var(--muted); font-size: 14.5px; }
+code { font: 600 13px var(--mono); background: var(--bg2); border: 1px solid var(--line); padding: 2px 6px; border-radius: 6px; color: var(--ink); overflow-wrap: anywhere; }
+
+.why { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.why div { background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.why b { display: block; font-size: 15px; margin-bottom: 4px; }
+.why p { margin: 0; color: var(--muted); font-size: 14px; }
+
+.note { border-left: 3px solid var(--blue); background: rgba(92,178,255,.08); border-radius: 10px; padding: 12px 14px; color: var(--muted); font-size: 14.5px; }
+.note b { color: var(--ink); }
+footer { color: var(--dim); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 3l13 7-6 1.8L9.5 18z" fill="#1b0c03"/><path d="M17 15.5l1.2 2.3 2.3 1.2-2.3 1.2-1.2 2.3-1.2-2.3-2.3-1.2 2.3-1.2z" fill="#fff"/></svg></div>
+    <div class="logo">Fix<span>Pilot</span></div>
+    <a class="back" href="/">Support desk</a>
+  </div>
+
+  <section>
+    <h1>Get the FixPilot app <em>for Windows</em></h1>
+    <p class="lead">The support desk runs in the cloud. The FixPilot app runs on the customer's PC, because it is the part that
+      sees the screen and uses the mouse and keyboard. It only starts after the customer enters a support code and presses Accept.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/Aryanpandya01/fixpilot/archive/refs/heads/main.zip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+        Download FixPilot (ZIP)</a>
+      <a class="btn ghost" href="https://github.com/Aryanpandya01/fixpilot" target="_blank" rel="noopener">View the code on GitHub</a>
+    </div>
+    <div class="req">Needs Windows 10 or 11, Python 3.11 or newer, a Gemini API key, and the FixPilot access token from the team.</div>
+  </section>
+
+  <section>
+    <h2>Set up and use it</h2>
+    <ol class="steps">
+      <li><div><b>Install Python</b><p>From <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">python.org</a>.
+        In the installer, tick <b>Add python.exe to PATH</b>.</p></div></li>
+      <li><div><b>Unzip FixPilot and run <code>INSTALL_FIXPILOT.bat</code></b><p>Once per PC. It installs everything and asks for your
+        Gemini API key (free from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>) and the FixPilot access token.
+        It then checks the connection to the support desk.</p></div></li>
+      <li><div><b>Start it with <code>START_FIXPILOT.bat</code></b><p>The FixPilot panel opens docked on the right edge of the screen.
+        Open the software you need help with on the left.</p></div></li>
+      <li><div><b>Enter the support code</b><p>Support creates a 6-digit code on the <a href="/">support desk</a>. In the panel, open
+        <b>Support code</b>, type it, read the request and choose <b>Just fix it</b>, <b>Ask first</b> or <b>Guide me</b>.</p></div></li>
+      <li><div><b>Press Accept and watch it work</b><p>Each step shows in the panel and on the support desk at the same time.
+        Press <b>STOP</b> or <b>Ctrl+Shift+X</b> at any moment.</p></div></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Why an app and not a web page?</h2>
+    <div class="why">
+      <div><b>It acts on your PC</b><p>A website is not allowed to move your mouse or read your screen. That is why AnyDesk and TeamViewer are apps too.</p></div>
+      <div><b>Nothing happens without you</b><p>A support code plus your Accept starts a session. Choose <b>Ask first</b> to approve every click.</p></div>
+      <div><b>Your passwords stay yours</b><p>At a password box FixPilot pauses and you type it. It never reads or stores it.</p></div>
+    </div>
+  </section>
+
+  <div class="note"><b>Judging FixPilot?</b> The quickest way to see it work is the live demo on our laptops or the demo video.
+    To run it yourself, follow the steps above and ask the team for the access token.</div>
+
+  <footer>FixPilot · Startup Buildathon India 2026 · Built with Gemini Computer Use and Google Cloud Run</footer>
+</div>
+</body>
+</html>

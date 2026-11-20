@@ -10,7 +10,7 @@ Built for Startup Buildathon India 2026 with Gemini Computer Use.
 |---|---|
 | Live support desk (session server + dashboard) | https://fixpilot-server-382332871298.asia-south1.run.app |
 | Demo video | `VIDEO_URL` |
-| Customer app, preview in the browser (enter a code from the desk; plays a simulated run) | https://fixpilot-server-382332871298.asia-south1.run.app/app |
+| Get the customer app (install guide) | https://fixpilot-server-382332871298.asia-south1.run.app/app |
 | Customer app download | [Download ZIP](https://github.com/Aryanpandya01/fixpilot/archive/refs/heads/main.zip) (setup below) |
 
 ## How it works
@@ -44,12 +44,11 @@ software, here the BilliGo billing app, using `kb/billigo.md`).
 ## Run it
 
 **Customer PC (Windows 10/11, Python 3.11+)**
-```powershell
-py -3.11 -m venv .venv
-.venv\Scripts\pip install -r agent\requirements.txt
-copy .env.example .env      # set GEMINI_API_KEY, SERVER_URL=https://fixpilot-server-382332871298.asia-south1.run.app, FIXPILOT_TOKEN
-app\run.bat                 # opens the FixPilot panel docked on the right
-```
+1. Download the ZIP above and unzip it.
+2. Double-click **`INSTALL_FIXPILOT.bat`** (once). It installs everything, asks for a Gemini API key and the FixPilot
+   access token, and checks the key, the token and the cloud support desk.
+3. Double-click **`START_FIXPILOT.bat`**. The panel docks on the right; enter the support code and press Accept.
+
 Set Windows display scaling to 100% for the most accurate clicks.
 
 **Support desk**: open the live URL above, or run it locally:
