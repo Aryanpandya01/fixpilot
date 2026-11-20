@@ -10,6 +10,7 @@ Built for Startup Buildathon India 2026 with Gemini Computer Use.
 |---|---|
 | Live support desk (session server + dashboard) | https://fixpilot-server-382332871298.asia-south1.run.app |
 | Demo video | `VIDEO_URL` |
+| Customer app, preview in the browser (enter a code from the desk; plays a simulated run) | https://fixpilot-server-382332871298.asia-south1.run.app/app |
 | Customer app download | [Download ZIP](https://github.com/Aryanpandya01/fixpilot/archive/refs/heads/main.zip) (setup below) |
 
 ## How it works
