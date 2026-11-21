@@ -71,4 +71,4 @@ Set Windows display scaling to 100% for the most accurate clicks.
 Gemini Computer Use (Interactions API, `gemini-3.5-flash-lite` main model) · Python · FastAPI · WebSockets ·
 mss + Pillow (screen) · pyautogui (input) · vanilla HTML/JS · Google Cloud Run.
 
-Team: TEAM_NAMES
+Team FixPilot: Anas Pathan (Founder & AI Engineer) · Aryan Pandya
